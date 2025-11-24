@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +45,35 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: pendingCount } = useQuery({
+    queryKey: ['pending-approvals-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('deals')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['Submitted', 'Under Review']);
+
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: ['Manager', 'CEO', 'Admin'].includes(userProfile?.role_type || ''),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -63,18 +94,25 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
+                const showBadge = item.href === '/approvals' && pendingCount && pendingCount > 0;
+                
                 return (
                   <Link key={item.name} to={item.href}>
                     <Button
                       variant={isActive ? 'secondary' : 'ghost'}
                       size="sm"
                       className={cn(
-                        'gap-2',
+                        'gap-2 relative',
                         isActive && 'bg-secondary text-secondary-foreground'
                       )}
                     >
                       <Icon className="h-4 w-4" />
                       {item.name}
+                      {showBadge && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                          {pendingCount}
+                        </span>
+                      )}
                     </Button>
                   </Link>
                 );
