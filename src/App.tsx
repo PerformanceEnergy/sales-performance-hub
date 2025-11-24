@@ -12,6 +12,7 @@ import SubmitDeal from "./pages/SubmitDeal";
 import Drafts from "./pages/Drafts";
 import Leaderboard from "./pages/Leaderboard";
 import Teams from "./pages/Teams";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Teams />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Admin />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
