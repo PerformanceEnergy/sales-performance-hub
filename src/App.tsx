@@ -13,6 +13,7 @@ import Drafts from "./pages/Drafts";
 import Leaderboard from "./pages/Leaderboard";
 import Billings from "./pages/Billings";
 import BillingsUpload from "./pages/BillingsUpload";
+import Projections from "./pages/Projections";
 import Teams from "./pages/Teams";
 import Admin from "./pages/Admin";
 import ManagersAnalytics from "./pages/ManagersAnalytics";
@@ -98,6 +99,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <BillingsUpload />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projections"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Projections />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
