@@ -489,24 +489,28 @@ export default function SubmitDeal() {
                     BD Only (100%)
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-3">
-                  <RadioGroupItem value="BD_DT" id="bd_dt" />
-                  <Label htmlFor="bd_dt" className="font-normal cursor-pointer flex-1">
-                    BD + DT Split (70% / 30%)
-                  </Label>
-                </div>
+                {dealType !== 'Service' && (
+                  <div className="flex items-center space-x-2 border rounded-lg p-3">
+                    <RadioGroupItem value="BD_DT" id="bd_dt" />
+                    <Label htmlFor="bd_dt" className="font-normal cursor-pointer flex-1">
+                      BD + DT Split (70% / 30%)
+                    </Label>
+                  </div>
+                )}
                 <div className="flex items-center space-x-2 border rounded-lg p-3">
                   <RadioGroupItem value="360" id="360" />
                   <Label htmlFor="360" className="font-normal cursor-pointer flex-1">
                     360 (100%)
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-3">
-                  <RadioGroupItem value="360_DT" id="360_dt" />
-                  <Label htmlFor="360_dt" className="font-normal cursor-pointer flex-1">
-                    360 + DT Split (70% / 30%)
-                  </Label>
-                </div>
+                {dealType !== 'Service' && (
+                  <div className="flex items-center space-x-2 border rounded-lg p-3">
+                    <RadioGroupItem value="360_DT" id="360_dt" />
+                    <Label htmlFor="360_dt" className="font-normal cursor-pointer flex-1">
+                      360 + DT Split (70% / 30%)
+                    </Label>
+                  </div>
+                )}
               </RadioGroup>
 
               {/* Team Section */}
