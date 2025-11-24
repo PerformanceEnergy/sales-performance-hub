@@ -37,37 +37,26 @@ export default function Leaderboard() {
           deal.user_360_id === profile.id
         ) || [];
 
-        // Calculate GP Added (excluding renewals)
-        const gpAdded = userDeals
-          .filter((deal) => !deal.is_renewal)
-          .reduce((sum, deal) => {
-            let percent = 0;
-            if (deal.bd_user_id === profile.id) percent = deal.bd_percent || 0;
-            if (deal.dt_user_id === profile.id) percent = deal.dt_percent || 0;
-            if (deal.user_360_id === profile.id) percent = deal.percent_360 || 0;
-            return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
-          }, 0);
-
-        // Count new placements (non-renewal deals)
-        const newPlacements = userDeals.filter((deal) => !deal.is_renewal).length;
-
-        // Count renewals
-        const renewalCount = userDeals.filter((deal) => deal.is_renewal).length;
+        // Calculate total billings (all approved deals with user's percentage)
+        const billings = userDeals.reduce((sum, deal) => {
+          let percent = 0;
+          if (deal.bd_user_id === profile.id) percent = deal.bd_percent || 0;
+          if (deal.dt_user_id === profile.id) percent = deal.dt_percent || 0;
+          if (deal.user_360_id === profile.id) percent = deal.percent_360 || 0;
+          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+        }, 0);
 
         return {
           id: profile.id,
           name: profile.name,
-          email: profile.email,
           roleType: profile.role_type,
           teamName: profile.teams?.team_name || 'No Team',
-          gpAdded,
-          newPlacements,
-          renewalCount,
+          billings,
         };
       }) || [];
 
-      // Sort by GP Added (descending)
-      return userMetrics.sort((a, b) => b.gpAdded - a.gpAdded);
+      // Sort by billings (descending)
+      return userMetrics.sort((a, b) => b.billings - a.billings);
     },
   });
 
@@ -101,31 +90,24 @@ export default function Leaderboard() {
           memberIds.includes(deal.user_360_id)
         ) || [];
 
-        // Calculate total GP Added
-        const gpAdded = teamDeals
-          .filter((deal) => !deal.is_renewal)
-          .reduce((sum, deal) => {
-            let percent = 0;
-            if (memberIds.includes(deal.bd_user_id)) percent += (deal.bd_percent || 0);
-            if (memberIds.includes(deal.dt_user_id)) percent += (deal.dt_percent || 0);
-            if (memberIds.includes(deal.user_360_id)) percent += (deal.percent_360 || 0);
-            return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
-          }, 0);
-
-        const newPlacements = teamDeals.filter((deal) => !deal.is_renewal).length;
-        const renewalCount = teamDeals.filter((deal) => deal.is_renewal).length;
+        // Calculate total billings
+        const billings = teamDeals.reduce((sum, deal) => {
+          let percent = 0;
+          if (memberIds.includes(deal.bd_user_id)) percent += (deal.bd_percent || 0);
+          if (memberIds.includes(deal.dt_user_id)) percent += (deal.dt_percent || 0);
+          if (memberIds.includes(deal.user_360_id)) percent += (deal.percent_360 || 0);
+          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+        }, 0);
 
         return {
           id: team.id,
           teamName: team.team_name,
           memberCount: team.profiles?.length || 0,
-          gpAdded,
-          newPlacements,
-          renewalCount,
+          billings,
         };
       }) || [];
 
-      return teamMetrics.sort((a, b) => b.gpAdded - a.gpAdded);
+      return teamMetrics.sort((a, b) => b.billings - a.billings);
     },
   });
 
@@ -178,10 +160,9 @@ export default function Leaderboard() {
               <TableRow className="data-table-header">
                 <TableHead className="w-16">Rank</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Team</TableHead>
-                <TableHead className="text-right">GP Added</TableHead>
-                <TableHead className="text-right">New Placements</TableHead>
-                <TableHead className="text-right">Renewals</TableHead>
+                <TableHead className="text-right">Billings to Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -191,17 +172,17 @@ export default function Leaderboard() {
                     {getRankIcon(index)}
                   </TableCell>
                   <TableCell>
-                    <div>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
-                    </div>
+                    <div className="font-medium">{user.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getRoleColor(user.roleType)}>
+                      {user.roleType}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.teamName}</TableCell>
                   <TableCell className="text-right font-semibold text-accent">
-                    £{user.gpAdded.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                    £{user.billings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
                   </TableCell>
-                  <TableCell className="text-right">{user.newPlacements}</TableCell>
-                  <TableCell className="text-right">{user.renewalCount}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -292,9 +273,7 @@ export default function Leaderboard() {
                       <TableHead className="w-16">Rank</TableHead>
                       <TableHead>Team Name</TableHead>
                       <TableHead className="text-right">Members</TableHead>
-                      <TableHead className="text-right">GP Added</TableHead>
-                      <TableHead className="text-right">New Placements</TableHead>
-                      <TableHead className="text-right">Renewals</TableHead>
+                      <TableHead className="text-right">Billings to Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -310,10 +289,8 @@ export default function Leaderboard() {
                           {team.memberCount}
                         </TableCell>
                         <TableCell className="text-right font-semibold text-accent">
-                          £{team.gpAdded.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                          £{team.billings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
                         </TableCell>
-                        <TableCell className="text-right">{team.newPlacements}</TableCell>
-                        <TableCell className="text-right">{team.renewalCount}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
