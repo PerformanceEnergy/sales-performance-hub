@@ -18,6 +18,10 @@ import Admin from "./pages/Admin";
 import ManagersAnalytics from "./pages/ManagersAnalytics";
 import Approvals from "./pages/Approvals";
 import NotFound from "./pages/NotFound";
+import AnalyticsGPDetail from "./pages/AnalyticsGPDetail";
+import AnalyticsDealsDetail from "./pages/AnalyticsDealsDetail";
+import AnalyticsRenewalsDetail from "./pages/AnalyticsRenewalsDetail";
+import AnalyticsProjectionDetail from "./pages/AnalyticsProjectionDetail";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +138,46 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Approvals />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/gp-detail"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AnalyticsGPDetail />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/deals-detail"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AnalyticsDealsDetail />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/renewals-detail"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AnalyticsRenewalsDetail />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/projection-detail"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AnalyticsProjectionDetail />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
