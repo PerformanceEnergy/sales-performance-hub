@@ -33,7 +33,7 @@ export default function SubmitDeal() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [dealType, setDealType] = useState<'Staff' | 'Contract' | 'Service'>('Staff');
-  const [splitType, setSplitType] = useState<'BD' | 'BD_DT' | '360'>('BD');
+  const [splitType, setSplitType] = useState<'BD' | 'BD_DT' | '360' | '360_DT'>('BD');
   const [currency, setCurrency] = useState<string>('GBP');
   const [gpDaily, setGpDaily] = useState<string>('');
   const [durationDays, setDurationDays] = useState<string>('');
@@ -168,6 +168,11 @@ export default function SubmitDeal() {
       } else if (splitType === '360') {
         dealData.user_360_id = rep360;
         dealData.percent_360 = 100;
+      } else if (splitType === '360_DT') {
+        dealData.user_360_id = rep360;
+        dealData.percent_360 = 70;
+        dealData.dt_user_id = dtRep;
+        dealData.dt_percent = 30;
       }
 
       const { error } = await supabase.from('deals').insert([dealData]);
@@ -496,6 +501,12 @@ export default function SubmitDeal() {
                     360 (100%)
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2 border rounded-lg p-3">
+                  <RadioGroupItem value="360_DT" id="360_dt" />
+                  <Label htmlFor="360_dt" className="font-normal cursor-pointer flex-1">
+                    360 + DT Split (70% / 30%)
+                  </Label>
+                </div>
               </RadioGroup>
 
               {/* Team Section */}
@@ -579,6 +590,45 @@ export default function SubmitDeal() {
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+
+                {splitType === '360_DT' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="rep360">360 Rep *</Label>
+                      <Select value={rep360} onValueChange={setRep360} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select 360 Rep" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles
+                            .filter(p => p.role_type === '360')
+                            .map(profile => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dtRep">DT Rep *</Label>
+                      <Select value={dtRep} onValueChange={setDtRep} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select DT Rep" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles
+                            .filter(p => p.role_type === 'DT')
+                            .map(profile => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
