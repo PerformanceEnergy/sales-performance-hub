@@ -44,6 +44,7 @@ export default function SubmitDeal() {
   const [dtRep, setDtRep] = useState<string>('');
   const [rep360, setRep360] = useState<string>('');
   const [profiles, setProfiles] = useState<Tables<'profiles'>[]>([]);
+  const [serviceValue, setServiceValue] = useState<string>('');
   
   const calculatedValue = gpDaily && durationDays 
     ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
@@ -51,6 +52,10 @@ export default function SubmitDeal() {
 
   const gbpValue = calculatedValue && exchangeRate
     ? (parseFloat(calculatedValue) * exchangeRate).toFixed(2)
+    : '';
+
+  const serviceGbpValue = serviceValue && exchangeRate
+    ? (parseFloat(serviceValue) * exchangeRate).toFixed(2)
     : '';
 
   const totalEstimatedOpportunity = gpDaily && estimatedDays12Months && exchangeRate
@@ -122,13 +127,18 @@ export default function SubmitDeal() {
     const formData = new FormData(e.currentTarget);
     
     try {
+      const originalValue = parseFloat(formData.get('valueOriginalCurrency') as string);
+      const convertedGbpValue = dealType === 'Service' 
+        ? parseFloat(serviceGbpValue || '0')
+        : parseFloat(gbpValue || '0');
+
       const dealData: any = {
         deal_type: dealType,
         client: formData.get('client') as string,
         location: formData.get('location') as string,
         currency: formData.get('currency') as string,
-        value_original_currency: parseFloat(formData.get('valueOriginalCurrency') as string),
-        value_converted_gbp: parseFloat(formData.get('valueOriginalCurrency') as string), // TODO: Add FX conversion in Phase 2
+        value_original_currency: originalValue,
+        value_converted_gbp: convertedGbpValue,
         submitted_by_user_id: user?.id,
         status: asDraft ? 'Draft' : 'Submitted',
         submitted_month: new Date().getMonth() + 1,
@@ -431,8 +441,28 @@ export default function SubmitDeal() {
                         name="valueOriginalCurrency" 
                         type="number"
                         step="0.01"
+                        value={serviceValue}
+                        onChange={(e) => setServiceValue(e.target.value)}
                         className="pl-8"
                         required 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceGbpValue">GBP Value</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
+                      <Input 
+                        id="serviceGbpValue" 
+                        type="number"
+                        step="0.01"
+                        value={serviceGbpValue}
+                        readOnly
+                        className="bg-muted pl-8"
+                        placeholder={isFetchingRate ? "Fetching rate..." : "Auto-calculated"}
                       />
                     </div>
                   </div>
