@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -36,10 +36,63 @@ export default function SubmitDeal() {
   const [currency, setCurrency] = useState<string>('GBP');
   const [gpDaily, setGpDaily] = useState<string>('');
   const [durationDays, setDurationDays] = useState<string>('');
+  const [estimatedDays12Months, setEstimatedDays12Months] = useState<string>('');
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   
   const calculatedValue = gpDaily && durationDays 
     ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
     : '';
+
+  const gbpValue = calculatedValue && exchangeRate
+    ? (parseFloat(calculatedValue) * exchangeRate).toFixed(2)
+    : '';
+
+  const totalEstimatedOpportunity = gpDaily && estimatedDays12Months
+    ? (parseFloat(gpDaily) * parseInt(estimatedDays12Months)).toFixed(2)
+    : '';
+
+  const getCurrencySymbol = (curr: string) => {
+    switch(curr) {
+      case 'GBP': return '£';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'SAR': return '﷼';
+      case 'AED': return 'د.إ';
+      default: return '';
+    }
+  };
+
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      if (currency === 'GBP') {
+        setExchangeRate(1);
+        return;
+      }
+
+      setIsFetchingRate(true);
+      try {
+        const response = await fetch(
+          `https://api.exchangerate.host/latest?base=${currency}&symbols=GBP`
+        );
+        const data = await response.json();
+        if (data.rates && data.rates.GBP) {
+          setExchangeRate(data.rates.GBP);
+        }
+      } catch (error) {
+        console.error('Failed to fetch exchange rate:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Exchange rate error',
+          description: 'Could not fetch current exchange rate',
+        });
+      } finally {
+        setIsFetchingRate(false);
+      }
+    };
+
+    fetchExchangeRate();
+  }, [currency, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, asDraft: boolean) => {
     e.preventDefault();
@@ -233,16 +286,69 @@ export default function SubmitDeal() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {getCurrencySymbol(currency)}
+                      </span>
+                      <Input 
+                        id="valueOriginalCurrency" 
+                        name="valueOriginalCurrency" 
+                        type="number"
+                        step="0.01"
+                        value={calculatedValue}
+                        readOnly
+                        className="bg-muted pl-8"
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="gbpValue">GBP Value</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
+                      <Input 
+                        id="gbpValue" 
+                        type="number"
+                        step="0.01"
+                        value={gbpValue}
+                        readOnly
+                        className="bg-muted pl-8"
+                        placeholder={isFetchingRate ? "Fetching rate..." : "Auto-calculated"}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedDays12Months">Total Estimated Days (Next 12 Months)</Label>
                     <Input 
-                      id="valueOriginalCurrency" 
-                      name="valueOriginalCurrency" 
+                      id="estimatedDays12Months" 
+                      name="estimatedDays12Months" 
                       type="number"
-                      step="0.01"
-                      value={calculatedValue}
-                      readOnly
-                      className="bg-muted"
-                      required 
+                      value={estimatedDays12Months}
+                      onChange={(e) => setEstimatedDays12Months(e.target.value)}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalEstimatedOpportunity">Total Estimated Opportunity Value</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {getCurrencySymbol(currency)}
+                      </span>
+                      <Input 
+                        id="totalEstimatedOpportunity" 
+                        type="number"
+                        step="0.01"
+                        value={totalEstimatedOpportunity}
+                        readOnly
+                        className="bg-muted pl-8"
+                        placeholder="Auto-calculated"
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -287,13 +393,19 @@ export default function SubmitDeal() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
-                    <Input 
-                      id="valueOriginalCurrency" 
-                      name="valueOriginalCurrency" 
-                      type="number"
-                      step="0.01"
-                      required 
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {getCurrencySymbol(currency)}
+                      </span>
+                      <Input 
+                        id="valueOriginalCurrency" 
+                        name="valueOriginalCurrency" 
+                        type="number"
+                        step="0.01"
+                        className="pl-8"
+                        required 
+                      />
+                    </div>
                   </div>
                 </div>
               </>
