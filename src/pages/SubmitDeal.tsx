@@ -160,6 +160,35 @@ export default function SubmitDeal() {
               </div>
             </div>
 
+            {/* Financial Information */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency *</Label>
+                <Select name="currency" defaultValue="GBP" required>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="SAR">SAR (﷼)</SelectItem>
+                    <SelectItem value="AED">AED (د.إ)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
+                <Input 
+                  id="valueOriginalCurrency" 
+                  name="valueOriginalCurrency" 
+                  type="number"
+                  step="0.01"
+                  required 
+                />
+              </div>
+            </div>
+
             {/* Conditional Fields for Staff/Contract */}
             {(dealType === 'Staff' || dealType === 'Contract') && (
               <>
@@ -215,35 +244,6 @@ export default function SubmitDeal() {
                 </div>
               </>
             )}
-
-            {/* Financial Information */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency *</Label>
-                <Select name="currency" defaultValue="GBP" required>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="SAR">SAR (﷼)</SelectItem>
-                    <SelectItem value="AED">AED (د.إ)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
-                <Input 
-                  id="valueOriginalCurrency" 
-                  name="valueOriginalCurrency" 
-                  type="number"
-                  step="0.01"
-                  required 
-                />
-              </div>
-            </div>
 
             {/* Credit Split */}
             <div className="space-y-2">
