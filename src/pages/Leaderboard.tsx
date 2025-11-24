@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, TrendingUp, Award, Medal } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Trophy, TrendingUp, Award, Medal, Users } from 'lucide-react';
 
 export default function Leaderboard() {
-  const { data: leaderboard, isLoading } = useQuery({
+  const { data: leaderboard, isLoading: isLoadingIndividual } = useQuery({
     queryKey: ['leaderboard'],
     queryFn: async () => {
       // Fetch all users with their profiles
@@ -67,6 +68,64 @@ export default function Leaderboard() {
 
       // Sort by GP Added (descending)
       return userMetrics.sort((a, b) => b.gpAdded - a.gpAdded);
+    },
+  });
+
+  const { data: teamsLeaderboard, isLoading: isLoadingTeams } = useQuery({
+    queryKey: ['teams-leaderboard'],
+    queryFn: async () => {
+      // Fetch teams with their members
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select('*, profiles(id, name, role_type)')
+        .eq('active', true);
+
+      if (teamsError) throw teamsError;
+
+      // Fetch all approved deals
+      const { data: deals, error: dealsError } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('status', 'Approved');
+
+      if (dealsError) throw dealsError;
+
+      // Calculate metrics for each team
+      const teamMetrics = teamsData?.map((team) => {
+        const memberIds = team.profiles?.map((p: any) => p.id) || [];
+        
+        // Filter deals where team members are involved
+        const teamDeals = deals?.filter((deal) => 
+          memberIds.includes(deal.bd_user_id) ||
+          memberIds.includes(deal.dt_user_id) ||
+          memberIds.includes(deal.user_360_id)
+        ) || [];
+
+        // Calculate total GP Added
+        const gpAdded = teamDeals
+          .filter((deal) => !deal.is_renewal)
+          .reduce((sum, deal) => {
+            let percent = 0;
+            if (memberIds.includes(deal.bd_user_id)) percent += (deal.bd_percent || 0);
+            if (memberIds.includes(deal.dt_user_id)) percent += (deal.dt_percent || 0);
+            if (memberIds.includes(deal.user_360_id)) percent += (deal.percent_360 || 0);
+            return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+          }, 0);
+
+        const newPlacements = teamDeals.filter((deal) => !deal.is_renewal).length;
+        const renewalCount = teamDeals.filter((deal) => deal.is_renewal).length;
+
+        return {
+          id: team.id,
+          teamName: team.team_name,
+          memberCount: team.profiles?.length || 0,
+          gpAdded,
+          newPlacements,
+          renewalCount,
+        };
+      }) || [];
+
+      return teamMetrics.sort((a, b) => b.gpAdded - a.gpAdded);
     },
   });
 
@@ -157,14 +216,21 @@ export default function Leaderboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <TrendingUp className="h-8 w-8 text-primary" />
-          Individual Leaderboard
+          Leaderboard
         </h1>
         <p className="text-muted-foreground">
-          Performance rankings based on GP Added by role
+          Performance rankings for individuals and teams
         </p>
       </div>
 
-      {isLoading ? (
+      <Tabs defaultValue="individual" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="individual">Individual</TabsTrigger>
+          <TabsTrigger value="teams">Teams</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="individual" className="space-y-6">
+          {isLoadingIndividual ? (
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
@@ -192,6 +258,77 @@ export default function Leaderboard() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="teams" className="space-y-6">
+          {isLoadingTeams ? (
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : teamsLeaderboard && teamsLeaderboard.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Team Rankings
+                </CardTitle>
+                <CardDescription>
+                  {teamsLeaderboard.length} {teamsLeaderboard.length === 1 ? 'team' : 'teams'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="data-table-header">
+                      <TableHead className="w-16">Rank</TableHead>
+                      <TableHead>Team Name</TableHead>
+                      <TableHead className="text-right">Members</TableHead>
+                      <TableHead className="text-right">GP Added</TableHead>
+                      <TableHead className="text-right">New Placements</TableHead>
+                      <TableHead className="text-right">Renewals</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teamsLeaderboard.map((team, index) => (
+                      <TableRow key={team.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {getRankIcon(index)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{team.teamName}</div>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {team.memberCount}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-accent">
+                          £{team.gpAdded.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                        </TableCell>
+                        <TableCell className="text-right">{team.newPlacements}</TableCell>
+                        <TableCell className="text-right">{team.renewalCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">No teams available yet</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
