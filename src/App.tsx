@@ -13,6 +13,7 @@ import Drafts from "./pages/Drafts";
 import Leaderboard from "./pages/Leaderboard";
 import Teams from "./pages/Teams";
 import Admin from "./pages/Admin";
+import ManagersAnalytics from "./pages/ManagersAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Admin />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <ManagersAnalytics />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
