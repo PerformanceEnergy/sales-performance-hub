@@ -27,6 +27,7 @@ import {
   Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import peLogo from '@/assets/pe-logo.png';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -82,14 +83,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto flex h-20 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <TrendingUp className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">Performance Energy</h1>
+            <Link to="/" className="flex items-center gap-3">
+              <img src={peLogo} alt="Performance Energy" className="h-12 w-auto" />
+              <div className="flex flex-col">
+                <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Performance Energy</h1>
                 <p className="text-xs text-muted-foreground">Sales Insights</p>
               </div>
             </Link>
@@ -150,7 +149,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         {children}
       </main>
     </div>
