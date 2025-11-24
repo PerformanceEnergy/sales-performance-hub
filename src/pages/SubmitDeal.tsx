@@ -48,8 +48,8 @@ export default function SubmitDeal() {
     ? (parseFloat(calculatedValue) * exchangeRate).toFixed(2)
     : '';
 
-  const totalEstimatedOpportunity = gpDaily && estimatedDays12Months
-    ? (parseFloat(gpDaily) * parseInt(estimatedDays12Months)).toFixed(2)
+  const totalEstimatedOpportunity = gpDaily && estimatedDays12Months && exchangeRate
+    ? (parseFloat(gpDaily) * parseInt(estimatedDays12Months) * exchangeRate).toFixed(2)
     : '';
 
   const getCurrencySymbol = (curr: string) => {
@@ -337,7 +337,7 @@ export default function SubmitDeal() {
                     <Label htmlFor="totalEstimatedOpportunity">Total Estimated Opportunity Value</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        {getCurrencySymbol(currency)}
+                        £
                       </span>
                       <Input 
                         id="totalEstimatedOpportunity" 
