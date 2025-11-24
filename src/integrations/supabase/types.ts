@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_targets: {
+        Row: {
+          created_at: string
+          id: string
+          set_by_user_id: string
+          target_gp: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          set_by_user_id: string
+          target_gp: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          set_by_user_id?: string
+          target_gp?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      billing_uploads: {
+        Row: {
+          correction_reason: string | null
+          created_at: string
+          file_data: Json
+          file_name: string
+          id: string
+          is_correction: boolean
+          month: number
+          replaced_upload_id: string | null
+          uploaded_at: string
+          uploaded_by_user_id: string
+          year: number
+        }
+        Insert: {
+          correction_reason?: string | null
+          created_at?: string
+          file_data: Json
+          file_name: string
+          id?: string
+          is_correction?: boolean
+          month: number
+          replaced_upload_id?: string | null
+          uploaded_at?: string
+          uploaded_by_user_id: string
+          year: number
+        }
+        Update: {
+          correction_reason?: string | null
+          created_at?: string
+          file_data?: Json
+          file_name?: string
+          id?: string
+          is_correction?: boolean
+          month?: number
+          replaced_upload_id?: string | null
+          uploaded_at?: string
+          uploaded_by_user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_uploads_replaced_upload_id_fkey"
+            columns: ["replaced_upload_id"]
+            isOneToOne: false
+            referencedRelation: "billing_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           approved_by_user_id: string | null

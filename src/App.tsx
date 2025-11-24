@@ -12,6 +12,7 @@ import SubmitDeal from "./pages/SubmitDeal";
 import Drafts from "./pages/Drafts";
 import Leaderboard from "./pages/Leaderboard";
 import Billings from "./pages/Billings";
+import BillingsUpload from "./pages/BillingsUpload";
 import Teams from "./pages/Teams";
 import Admin from "./pages/Admin";
 import ManagersAnalytics from "./pages/ManagersAnalytics";
@@ -83,6 +84,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Billings />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billings/upload"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <BillingsUpload />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

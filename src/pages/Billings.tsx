@@ -1,17 +1,122 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Target, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { DollarSign, Target, TrendingUp, Upload, Edit } from 'lucide-react';
 
 export default function Billings() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [targetValue, setTargetValue] = useState('');
+  const currentYear = new Date().getFullYear();
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: targetData } = useQuery({
+    queryKey: ['billing-target', currentYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('billing_targets')
+        .select('*')
+        .eq('year', currentYear)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
+  const targetMutation = useMutation({
+    mutationFn: async (target: number) => {
+      const { data: existing } = await supabase
+        .from('billing_targets')
+        .select('id')
+        .eq('year', currentYear)
+        .single();
+
+      if (existing) {
+        const { data, error } = await supabase
+          .from('billing_targets')
+          .update({ target_gp: target, set_by_user_id: user?.id })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('billing_targets')
+          .insert({ year: currentYear, target_gp: target, set_by_user_id: user?.id })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Target updated successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['billing-target'] });
+      setIsEditingTarget(false);
+      setTargetValue('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update target',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSaveTarget = () => {
+    const value = parseFloat(targetValue);
+    if (isNaN(value) || value <= 0) {
+      toast({
+        title: 'Invalid value',
+        description: 'Please enter a valid target amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+    targetMutation.mutate(value);
+  };
+
   // Placeholder data - will be replaced with actual data from CSV uploads
   const topMetrics = {
     totalRevenue: 0,
     totalGP: 0,
     totalNP: 0,
-    targetGP: 0,
-    remaining: 0,
+    targetGP: targetData?.target_gp || 0,
+    remaining: (targetData?.target_gp || 0) - 0,
   };
+
+  const isCEO = userProfile?.role_type === 'CEO';
 
   const teamStats = [
     { team: 'KG-2', revenue: 0, gp: 0, np: 0, percentage: 0 },
@@ -93,14 +198,20 @@ export default function Billings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <DollarSign className="h-8 w-8 text-primary" />
-          Billings
-        </h1>
-        <p className="text-muted-foreground">
-          Track actual team billings and performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <DollarSign className="h-8 w-8 text-primary" />
+            Billings
+          </h1>
+          <p className="text-muted-foreground">
+            Track actual team billings and performance
+          </p>
+        </div>
+        <Button onClick={() => navigate('/billings/upload')}>
+          <Upload className="h-4 w-4 mr-2" />
+          Upload CSV
+        </Button>
       </div>
 
       {/* Top Metrics Section */}
@@ -138,10 +249,50 @@ export default function Billings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Target GP</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <div className="flex gap-2">
+              {isCEO && !isEditingTarget && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditingTarget(true);
+                    setTargetValue(topMetrics.targetGP.toString());
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{topMetrics.targetGP.toLocaleString('en-GB')}</div>
+            {isEditingTarget && isCEO ? (
+              <div className="space-y-2">
+                <Input
+                  type="number"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(e.target.value)}
+                  placeholder="Enter target GP"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveTarget}>
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingTarget(false);
+                      setTargetValue('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">£{topMetrics.targetGP.toLocaleString('en-GB')}</div>
+            )}
           </CardContent>
         </Card>
         
