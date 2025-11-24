@@ -99,7 +99,7 @@ export default function SubmitDeal() {
       setIsFetchingRate(true);
       try {
         const response = await fetch(
-          `https://api.frankfurter.app/latest?from=${currency}&to=GBP`
+          `https://api.exchangerate-api.com/v4/latest/${currency}`
         );
         const data = await response.json();
         if (data.rates && data.rates.GBP) {
