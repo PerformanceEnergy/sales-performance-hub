@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import SubmitDeal from "./pages/SubmitDeal";
 import Drafts from "./pages/Drafts";
 import Leaderboard from "./pages/Leaderboard";
+import Billings from "./pages/Billings";
 import Teams from "./pages/Teams";
 import Admin from "./pages/Admin";
 import ManagersAnalytics from "./pages/ManagersAnalytics";
@@ -72,6 +73,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Leaderboard />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billings"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Billings />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

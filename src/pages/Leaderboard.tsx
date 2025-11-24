@@ -162,7 +162,7 @@ export default function Leaderboard() {
                 <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Team</TableHead>
-                <TableHead className="text-right">Billings to Date</TableHead>
+                <TableHead className="text-right">GP Added to Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -273,7 +273,7 @@ export default function Leaderboard() {
                       <TableHead className="w-16">Rank</TableHead>
                       <TableHead>Team Name</TableHead>
                       <TableHead className="text-right">Members</TableHead>
-                      <TableHead className="text-right">Billings to Date</TableHead>
+                      <TableHead className="text-right">GP Added to Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

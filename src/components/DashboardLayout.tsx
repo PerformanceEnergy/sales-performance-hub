@@ -22,7 +22,8 @@ import {
   User,
   FileCheck,
   LineChart,
-  CheckCircle
+  CheckCircle,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'My Drafts', href: '/drafts', icon: FileCheck },
   { name: 'Approvals', href: '/approvals', icon: CheckCircle },
   { name: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
+  { name: 'Billings', href: '/billings', icon: DollarSign },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: LineChart },
   { name: 'Admin', href: '/admin', icon: User },
