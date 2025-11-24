@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2, FileText, Save, Send } from 'lucide-react';
 import { z } from 'zod';
+import type { Tables } from '@/integrations/supabase/types';
 
 const dealSchema = z.object({
   dealType: z.enum(['Staff', 'Contract', 'Service']),
@@ -39,6 +40,10 @@ export default function SubmitDeal() {
   const [estimatedDays12Months, setEstimatedDays12Months] = useState<string>('');
   const [exchangeRate, setExchangeRate] = useState<number>(1);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [bdRep, setBdRep] = useState<string>('');
+  const [dtRep, setDtRep] = useState<string>('');
+  const [rep360, setRep360] = useState<string>('');
+  const [profiles, setProfiles] = useState<Tables<'profiles'>[]>([]);
   
   const calculatedValue = gpDaily && durationDays 
     ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
@@ -62,6 +67,22 @@ export default function SubmitDeal() {
       default: return '';
     }
   };
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      
+      if (!error && data) {
+        setProfiles(data);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
 
   useEffect(() => {
     const fetchExchangeRate = async () => {
@@ -127,15 +148,15 @@ export default function SubmitDeal() {
 
       // Add split information
       if (splitType === 'BD') {
-        dealData.bd_user_id = user?.id;
+        dealData.bd_user_id = bdRep;
         dealData.bd_percent = 100;
       } else if (splitType === 'BD_DT') {
-        dealData.bd_user_id = user?.id;
+        dealData.bd_user_id = bdRep;
         dealData.bd_percent = 70;
-        // TODO: Add DT user selection in enhanced version
+        dealData.dt_user_id = dtRep;
         dealData.dt_percent = 30;
       } else if (splitType === '360') {
-        dealData.user_360_id = user?.id;
+        dealData.user_360_id = rep360;
         dealData.percent_360 = 100;
       }
 
@@ -419,9 +440,9 @@ export default function SubmitDeal() {
               </>
             )}
 
-            {/* Credit Split */}
-            <div className="space-y-2">
-              <Label>Credit Split *</Label>
+            {/* GP Split */}
+            <div className="space-y-4">
+              <Label>GP Split *</Label>
               <RadioGroup
                 value={splitType}
                 onValueChange={(value) => setSplitType(value as any)}
@@ -446,6 +467,90 @@ export default function SubmitDeal() {
                   </Label>
                 </div>
               </RadioGroup>
+
+              {/* Team Section */}
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-medium">Team</Label>
+                
+                {splitType === 'BD' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bdRep">BD Rep *</Label>
+                    <Select value={bdRep} onValueChange={setBdRep} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select BD Rep" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {profiles
+                          .filter(p => p.role_type === 'BD')
+                          .map(profile => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {splitType === 'BD_DT' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="bdRep">BD Rep *</Label>
+                      <Select value={bdRep} onValueChange={setBdRep} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select BD Rep" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles
+                            .filter(p => p.role_type === 'BD')
+                            .map(profile => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dtRep">DT Rep *</Label>
+                      <Select value={dtRep} onValueChange={setDtRep} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select DT Rep" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles
+                            .filter(p => p.role_type === 'DT')
+                            .map(profile => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {splitType === '360' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="rep360">360 Rep *</Label>
+                    <Select value={rep360} onValueChange={setRep360} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select 360 Rep" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {profiles
+                          .filter(p => p.role_type === '360')
+                          .map(profile => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Action Buttons */}
