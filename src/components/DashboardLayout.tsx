@@ -90,7 +90,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-foreground">Performance Energy</h1>
-                <p className="text-xs text-muted-foreground">Sales Board</p>
+                <p className="text-xs text-muted-foreground">Sales Insights</p>
               </div>
             </Link>
 
