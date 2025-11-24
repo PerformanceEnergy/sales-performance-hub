@@ -38,6 +38,7 @@ export default function SubmitDeal() {
   const [gpDaily, setGpDaily] = useState<string>('');
   const [durationDays, setDurationDays] = useState<string>('');
   const [estimatedDays12Months, setEstimatedDays12Months] = useState<string>('');
+  const [salary, setSalary] = useState<string>('');
   const [exchangeRate, setExchangeRate] = useState<number>(1);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [bdRep, setBdRep] = useState<string>('');
@@ -62,6 +63,10 @@ export default function SubmitDeal() {
 
   const totalEstimatedOpportunity = gpDaily && estimatedDays12Months && exchangeRate
     ? (parseFloat(gpDaily) * parseInt(estimatedDays12Months) * exchangeRate).toFixed(2)
+    : '';
+
+  const gpPercent = gpDaily && salary && parseFloat(salary) > 0
+    ? ((parseFloat(gpDaily) / parseFloat(salary)) * 100).toFixed(2)
     : '';
 
   const getCurrencySymbol = (curr: string) => {
@@ -313,6 +318,40 @@ export default function SubmitDeal() {
                     />
                   </div>
                 </div>
+
+                {dealType === 'Staff' && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="salary">
+                        Salary to Worker ({getCurrencySymbol(currency)}) *
+                      </Label>
+                      <Input 
+                        id="salary" 
+                        name="salary" 
+                        type="number" 
+                        step="0.01"
+                        value={salary}
+                        onChange={(e) => setSalary(e.target.value)}
+                        required 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gpPercent">GP %</Label>
+                      <div className="relative">
+                        <Input 
+                          id="gpPercent" 
+                          type="number"
+                          step="0.01"
+                          value={gpPercent}
+                          readOnly
+                          className="bg-muted"
+                          placeholder="Auto-calculated"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {dealType === 'Contract' && (
                   <div className="grid gap-4 md:grid-cols-2">
