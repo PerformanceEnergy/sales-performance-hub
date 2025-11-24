@@ -291,6 +291,44 @@ export type Database = {
           },
         ]
       }
+      projection_adjustments: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          expected_mobilisation_date: string | null
+          id: string
+          updated_at: string | null
+          value_this_year_gbp: number | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          expected_mobilisation_date?: string | null
+          id?: string
+          updated_at?: string | null
+          value_this_year_gbp?: number | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          expected_mobilisation_date?: string | null
+          id?: string
+          updated_at?: string | null
+          value_this_year_gbp?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projection_adjustments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           active: boolean | null
