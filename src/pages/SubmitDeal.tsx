@@ -33,6 +33,13 @@ export default function SubmitDeal() {
   const [isLoading, setIsLoading] = useState(false);
   const [dealType, setDealType] = useState<'Staff' | 'Contract' | 'Service'>('Staff');
   const [splitType, setSplitType] = useState<'BD' | 'BD_DT' | '360'>('BD');
+  const [currency, setCurrency] = useState<string>('GBP');
+  const [gpDaily, setGpDaily] = useState<string>('');
+  const [durationDays, setDurationDays] = useState<string>('');
+  
+  const calculatedValue = gpDaily && durationDays 
+    ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
+    : '';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, asDraft: boolean) => {
     e.preventDefault();
@@ -160,35 +167,6 @@ export default function SubmitDeal() {
               </div>
             </div>
 
-            {/* Financial Information */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency *</Label>
-                <Select name="currency" defaultValue="GBP" required>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="SAR">SAR (﷼)</SelectItem>
-                    <SelectItem value="AED">AED (د.إ)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
-                <Input 
-                  id="valueOriginalCurrency" 
-                  name="valueOriginalCurrency" 
-                  type="number"
-                  step="0.01"
-                  required 
-                />
-              </div>
-            </div>
-
             {/* Conditional Fields for Staff/Contract */}
             {(dealType === 'Staff' || dealType === 'Contract') && (
               <>
@@ -202,17 +180,45 @@ export default function SubmitDeal() {
                     <Input id="workerName" name="workerName" required />
                   </div>
                 </div>
+                
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="gpDaily">GP Daily (£) *</Label>
+                    <Label htmlFor="currency">Currency *</Label>
+                    <Select 
+                      name="currency" 
+                      value={currency}
+                      onValueChange={setCurrency}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="SAR">SAR (﷼)</SelectItem>
+                        <SelectItem value="AED">AED (د.إ)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gpDaily">
+                      GP Daily ({currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'SAR' ? '﷼' : 'د.إ'}) *
+                    </Label>
                     <Input 
                       id="gpDaily" 
                       name="gpDaily" 
                       type="number" 
                       step="0.01"
+                      value={gpDaily}
+                      onChange={(e) => setGpDaily(e.target.value)}
                       required 
                     />
                   </div>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="durationDays">Duration (Days, max 90) *</Label>
                     <Input 
@@ -220,6 +226,21 @@ export default function SubmitDeal() {
                       name="durationDays" 
                       type="number"
                       max="90"
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(e.target.value)}
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
+                    <Input 
+                      id="valueOriginalCurrency" 
+                      name="valueOriginalCurrency" 
+                      type="number"
+                      step="0.01"
+                      value={calculatedValue}
+                      readOnly
+                      className="bg-muted"
                       required 
                     />
                   </div>
@@ -241,6 +262,39 @@ export default function SubmitDeal() {
                     name="serviceDescription"
                     rows={4}
                   />
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency *</Label>
+                    <Select 
+                      name="currency" 
+                      value={currency}
+                      onValueChange={setCurrency}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="SAR">SAR (﷼)</SelectItem>
+                        <SelectItem value="AED">AED (د.إ)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
+                    <Input 
+                      id="valueOriginalCurrency" 
+                      name="valueOriginalCurrency" 
+                      type="number"
+                      step="0.01"
+                      required 
+                    />
+                  </div>
                 </div>
               </>
             )}
