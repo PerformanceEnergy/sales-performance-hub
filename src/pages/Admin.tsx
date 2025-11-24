@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, UserPlus, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Loader2, UserPlus, Users, Pencil } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 export default function Admin() {
@@ -23,6 +24,15 @@ export default function Admin() {
     role_type: 'BD' as 'BD' | 'DT' | '360',
     team_id: ''
   });
+
+  const [editData, setEditData] = useState<{
+    id: string;
+    name: string;
+    role_type: string;
+    team_id: string;
+  } | null>(null);
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -62,6 +72,53 @@ export default function Admin() {
         team_id: ''
       });
 
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (profile: Tables<'profiles'>) => {
+    setEditData({
+      id: profile.id,
+      name: profile.name,
+      role_type: profile.role_type,
+      team_id: profile.team_id || ''
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editData) return;
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('update-user', {
+        body: {
+          user_id: editData.id,
+          name: editData.name,
+          role_type: editData.role_type,
+          team_id: editData.team_id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'User updated',
+        description: `${editData.name} has been updated successfully`
+      });
+
+      setIsEditOpen(false);
+      setEditData(null);
       fetchData();
     } catch (error: any) {
       toast({
@@ -209,6 +266,7 @@ export default function Admin() {
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Team</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -230,6 +288,15 @@ export default function Admin() {
                         <TableCell className="text-muted-foreground">
                           {(profile as any).teams?.team_name || '-'}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(profile)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -239,6 +306,87 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information and team assignment
+            </DialogDescription>
+          </DialogHeader>
+          {editData && (
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role *</Label>
+                <Select
+                  value={editData.role_type}
+                  onValueChange={(value) => setEditData({ ...editData, role_type: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BD">BD</SelectItem>
+                    <SelectItem value="DT">DT</SelectItem>
+                    <SelectItem value="360">360</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="CEO">CEO</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-team">Team *</Label>
+                <Select
+                  value={editData.team_id}
+                  onValueChange={(value) => setEditData({ ...editData, team_id: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.team_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditOpen(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Update User
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
