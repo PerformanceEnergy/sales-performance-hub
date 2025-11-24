@@ -46,9 +46,11 @@ export default function SubmitDeal() {
   const [profiles, setProfiles] = useState<Tables<'profiles'>[]>([]);
   const [serviceValue, setServiceValue] = useState<string>('');
   
-  const calculatedValue = gpDaily && durationDays 
-    ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
-    : '';
+  const calculatedValue = dealType === 'Staff'
+    ? gpDaily // Staff: Value = GP Fee (no duration multiplication)
+    : gpDaily && durationDays 
+      ? (parseFloat(gpDaily) * parseInt(durationDays)).toFixed(2)
+      : '';
 
   const gbpValue = calculatedValue && exchangeRate
     ? (parseFloat(calculatedValue) * exchangeRate).toFixed(2)
@@ -146,7 +148,12 @@ export default function SubmitDeal() {
       };
 
       // Add conditional fields based on deal type
-      if (dealType === 'Staff' || dealType === 'Contract') {
+      if (dealType === 'Staff') {
+        dealData.placement_id = formData.get('placementId') as string;
+        dealData.worker_name = formData.get('workerName') as string;
+        dealData.gp_daily = parseFloat(formData.get('gpDaily') as string);
+        // Staff deals don't have duration
+      } else if (dealType === 'Contract') {
         dealData.placement_id = formData.get('placementId') as string;
         dealData.worker_name = formData.get('workerName') as string;
         dealData.gp_daily = parseFloat(formData.get('gpDaily') as string);
@@ -293,7 +300,7 @@ export default function SubmitDeal() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gpDaily">
-                      GP Daily ({currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'SAR' ? '﷼' : 'د.إ'}) *
+                      {dealType === 'Staff' ? 'GP Fee' : 'GP Daily'} ({currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'SAR' ? '﷼' : 'د.إ'}) *
                     </Label>
                     <Input 
                       id="gpDaily" 
@@ -307,27 +314,50 @@ export default function SubmitDeal() {
                   </div>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="durationDays">Duration (Days, max 90) *</Label>
-                    <Select 
-                      name="durationDays" 
-                      value={durationDays}
-                      onValueChange={setDurationDays}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select days" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 90 }, (_, i) => i + 1).map((day) => (
-                          <SelectItem key={day} value={day.toString()}>
-                            {day}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {dealType === 'Contract' && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="durationDays">Duration (Days, max 90) *</Label>
+                      <Select 
+                        name="durationDays" 
+                        value={durationDays}
+                        onValueChange={setDurationDays}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select days" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 90 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={day.toString()}>
+                              {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          {getCurrencySymbol(currency)}
+                        </span>
+                        <Input 
+                          id="valueOriginalCurrency" 
+                          name="valueOriginalCurrency" 
+                          type="number"
+                          step="0.01"
+                          value={calculatedValue}
+                          readOnly
+                          className="bg-muted pl-8"
+                          required 
+                        />
+                      </div>
+                    </div>
                   </div>
+                )}
+                
+                {dealType === 'Staff' && (
                   <div className="space-y-2">
                     <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
                     <div className="relative">
@@ -346,55 +376,55 @@ export default function SubmitDeal() {
                       />
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="gbpValue">GBP Value</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
-                      <Input 
-                        id="gbpValue" 
-                        type="number"
-                        step="0.01"
-                        value={gbpValue}
-                        readOnly
-                        className="bg-muted pl-8"
-                        placeholder={isFetchingRate ? "Fetching rate..." : "Auto-calculated"}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="estimatedDays12Months">Total Estimated Days (Next 12 Months)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="gbpValue">GBP Value</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
                     <Input 
-                      id="estimatedDays12Months" 
-                      name="estimatedDays12Months" 
+                      id="gbpValue" 
                       type="number"
-                      value={estimatedDays12Months}
-                      onChange={(e) => setEstimatedDays12Months(e.target.value)}
+                      step="0.01"
+                      value={gbpValue}
+                      readOnly
+                      className="bg-muted pl-8"
+                      placeholder={isFetchingRate ? "Fetching rate..." : "Auto-calculated"}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="totalEstimatedOpportunity">Total Estimated Opportunity Value</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        £
-                      </span>
+                </div>
+
+                {dealType === 'Contract' && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="estimatedDays12Months">Total Estimated Days (Next 12 Months)</Label>
                       <Input 
-                        id="totalEstimatedOpportunity" 
+                        id="estimatedDays12Months" 
+                        name="estimatedDays12Months" 
                         type="number"
-                        step="0.01"
-                        value={totalEstimatedOpportunity}
-                        readOnly
-                        className="bg-muted pl-8"
-                        placeholder="Auto-calculated"
+                        value={estimatedDays12Months}
+                        onChange={(e) => setEstimatedDays12Months(e.target.value)}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="totalEstimatedOpportunity">Total Estimated Opportunity Value</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          £
+                        </span>
+                        <Input 
+                          id="totalEstimatedOpportunity" 
+                          type="number"
+                          step="0.01"
+                          value={totalEstimatedOpportunity}
+                          readOnly
+                          className="bg-muted pl-8"
+                          placeholder="Auto-calculated"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
 
