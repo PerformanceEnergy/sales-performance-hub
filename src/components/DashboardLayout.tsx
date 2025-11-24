@@ -19,7 +19,8 @@ import {
   LogOut, 
   User,
   FileCheck,
-  LineChart
+  LineChart,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Submit Deal', href: '/submit-deal', icon: FileText },
   { name: 'My Drafts', href: '/drafts', icon: FileCheck },
+  { name: 'Approvals', href: '/approvals', icon: CheckCircle },
   { name: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: LineChart },

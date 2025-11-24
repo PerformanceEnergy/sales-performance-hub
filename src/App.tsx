@@ -14,6 +14,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Teams from "./pages/Teams";
 import Admin from "./pages/Admin";
 import ManagersAnalytics from "./pages/ManagersAnalytics";
+import Approvals from "./pages/Approvals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <ManagersAnalytics />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/approvals"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Approvals />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
