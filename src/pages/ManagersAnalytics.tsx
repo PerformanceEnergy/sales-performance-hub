@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +18,7 @@ type ViewType = 'individual' | 'team' | 'role';
 
 export default function ManagersAnalytics() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month');
   const [viewType, setViewType] = useState<ViewType>('team');
   const [selectedPerson, setSelectedPerson] = useState<string>('all');
@@ -363,7 +365,12 @@ export default function ManagersAnalytics() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/5 transition-colors"
+          onClick={() => navigate('/analytics/gp-detail', { 
+            state: { deals: filteredDeals, profiles: analyticsData?.profiles } 
+          })}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total GP Added</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -375,7 +382,12 @@ export default function ManagersAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/5 transition-colors"
+          onClick={() => navigate('/analytics/deals-detail', { 
+            state: { deals: filteredDeals, profiles: analyticsData?.profiles } 
+          })}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Deals</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -385,7 +397,12 @@ export default function ManagersAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/5 transition-colors"
+          onClick={() => navigate('/analytics/renewals-detail', { 
+            state: { deals: filteredDeals, profiles: analyticsData?.profiles } 
+          })}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Renewals</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -395,7 +412,18 @@ export default function ManagersAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/5 transition-colors"
+          onClick={() => navigate('/analytics/projection-detail', { 
+            state: { 
+              projection, 
+              currentTotal: totalGP, 
+              avgMonthly: monthlyTrends.length > 0 ? monthlyTrends.reduce((sum, m) => sum + m.gpAdded, 0) / monthlyTrends.length : 0,
+              remainingMonths: 12 - new Date().getMonth(),
+              monthlyTrends 
+            } 
+          })}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Year Projection</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
