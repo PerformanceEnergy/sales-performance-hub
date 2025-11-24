@@ -32,6 +32,7 @@ const navigation = [
   { name: 'My Drafts', href: '/drafts', icon: FileCheck },
   { name: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
   { name: 'Teams', href: '/teams', icon: Users },
+  { name: 'Admin', href: '/admin', icon: User },
 ];
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
