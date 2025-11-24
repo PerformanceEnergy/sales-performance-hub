@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -12,17 +13,35 @@ import {
   DollarSign,
   Users,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  Trophy
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Fetch user's deals statistics
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats', user?.id],
+  // Fetch user's profile to get role_type
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile', user?.id],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role_type')
+        .eq('id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch user's deals statistics and rankings
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats', user?.id, userProfile?.role_type],
+    queryFn: async () => {
+      // Get current user's deals
       const { data: deals, error } = await supabase
         .from('deals')
         .select('*')
@@ -38,14 +57,77 @@ export default function Dashboard() {
         ?.filter(d => d.status === 'Approved')
         .reduce((sum, d) => sum + (Number(d.value_converted_gbp) || 0), 0) || 0;
 
+      // Get rankings among same role
+      let rankings = { totalDeals: { rank: 0, total: 0 }, approvedDeals: { rank: 0, total: 0 }, pendingDeals: { rank: 0, total: 0 }, totalValue: { rank: 0, total: 0 } };
+      
+      if (userProfile?.role_type) {
+        // Get all users with same role
+        const { data: sameRoleUsers, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role_type', userProfile.role_type);
+
+        if (!profileError && sameRoleUsers) {
+          const userIds = sameRoleUsers.map(p => p.id);
+          
+          // Get all deals for users with same role
+          const { data: allDeals, error: dealsError } = await supabase
+            .from('deals')
+            .select('*')
+            .in('submitted_by_user_id', userIds);
+
+          if (!dealsError && allDeals) {
+            // Calculate stats per user
+            const userStats = userIds.map(userId => {
+              const userDeals = allDeals.filter(d => d.submitted_by_user_id === userId);
+              return {
+                userId,
+                totalDeals: userDeals.length,
+                approvedDeals: userDeals.filter(d => d.status === 'Approved').length,
+                pendingDeals: userDeals.filter(d => d.status === 'Submitted' || d.status === 'Under Review').length,
+                totalValue: userDeals.filter(d => d.status === 'Approved').reduce((sum, d) => sum + (Number(d.value_converted_gbp) || 0), 0),
+              };
+            });
+
+            // Calculate rankings
+            const totalUsers = userStats.length;
+            
+            // Total deals ranking (descending)
+            const sortedByTotal = [...userStats].sort((a, b) => b.totalDeals - a.totalDeals);
+            const totalRank = sortedByTotal.findIndex(s => s.userId === user?.id) + 1;
+            
+            // Approved deals ranking (descending)
+            const sortedByApproved = [...userStats].sort((a, b) => b.approvedDeals - a.approvedDeals);
+            const approvedRank = sortedByApproved.findIndex(s => s.userId === user?.id) + 1;
+            
+            // Pending deals ranking (ascending - fewer is better)
+            const sortedByPending = [...userStats].sort((a, b) => a.pendingDeals - b.pendingDeals);
+            const pendingRank = sortedByPending.findIndex(s => s.userId === user?.id) + 1;
+            
+            // Total value ranking (descending)
+            const sortedByValue = [...userStats].sort((a, b) => b.totalValue - a.totalValue);
+            const valueRank = sortedByValue.findIndex(s => s.userId === user?.id) + 1;
+
+            rankings = {
+              totalDeals: { rank: totalRank, total: totalUsers },
+              approvedDeals: { rank: approvedRank, total: totalUsers },
+              pendingDeals: { rank: pendingRank, total: totalUsers },
+              totalValue: { rank: valueRank, total: totalUsers },
+            };
+          }
+        }
+      }
+
       return {
         totalDeals,
         approvedDeals,
         pendingDeals,
         draftDeals,
         totalValue,
+        rankings,
       };
     },
+    enabled: !!user?.id && !!userProfile?.role_type,
   });
 
   const quickStats = [
@@ -55,6 +137,7 @@ export default function Dashboard() {
       icon: FileText,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
+      ranking: stats?.rankings?.totalDeals,
     },
     {
       title: 'Approved',
@@ -62,6 +145,7 @@ export default function Dashboard() {
       icon: CheckCircle,
       color: 'text-success',
       bgColor: 'bg-success/10',
+      ranking: stats?.rankings?.approvedDeals,
     },
     {
       title: 'Pending',
@@ -69,6 +153,7 @@ export default function Dashboard() {
       icon: Clock,
       color: 'text-warning',
       bgColor: 'bg-warning/10',
+      ranking: stats?.rankings?.pendingDeals,
     },
     {
       title: 'GP Added',
@@ -76,8 +161,16 @@ export default function Dashboard() {
       icon: DollarSign,
       color: 'text-accent',
       bgColor: 'bg-accent/10',
+      ranking: stats?.rankings?.totalValue,
     },
   ];
+
+  const getRankingSuffix = (rank: number) => {
+    if (rank === 1) return 'st';
+    if (rank === 2) return 'nd';
+    if (rank === 3) return 'rd';
+    return 'th';
+  };
 
   const quickLinks = [
     {
@@ -130,8 +223,9 @@ export default function Dashboard() {
         ) : (
           quickStats.map((stat) => {
             const Icon = stat.icon;
+            const hasRanking = stat.ranking && stat.ranking.rank > 0 && stat.ranking.total > 0;
             return (
-              <Card key={stat.title} className="metric-card">
+              <Card key={stat.title} className="metric-card relative">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="stat-label">{stat.title}</CardTitle>
                   <div className={`${stat.bgColor} rounded-lg p-2`}>
@@ -139,7 +233,15 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="stat-value">{stat.value}</div>
+                  <div className="flex items-end justify-between">
+                    <div className="stat-value">{stat.value}</div>
+                    {hasRanking && (
+                      <Badge variant="secondary" className="gap-1 text-xs font-semibold">
+                        <Trophy className="h-3 w-3" />
+                        {stat.ranking.rank}{getRankingSuffix(stat.ranking.rank)} of {stat.ranking.total}
+                      </Badge>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
