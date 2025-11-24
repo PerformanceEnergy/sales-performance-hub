@@ -18,7 +18,8 @@ import {
   Users, 
   LogOut, 
   User,
-  FileCheck
+  FileCheck,
+  LineChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'My Drafts', href: '/drafts', icon: FileCheck },
   { name: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
   { name: 'Teams', href: '/teams', icon: Users },
+  { name: 'Analytics', href: '/analytics', icon: LineChart },
   { name: 'Admin', href: '/admin', icon: User },
 ];
 
