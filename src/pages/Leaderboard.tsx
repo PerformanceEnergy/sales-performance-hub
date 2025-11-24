@@ -89,6 +89,69 @@ export default function Leaderboard() {
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
+  const roleGroups = ['BD', 'DT', '360', 'Manager', 'CEO', 'Admin'];
+  
+  const getLeaderboardByRole = (role: string) => {
+    return leaderboard?.filter(user => user.roleType === role) || [];
+  };
+
+  const renderRoleLeaderboard = (role: string) => {
+    const roleUsers = getLeaderboardByRole(role);
+    
+    if (roleUsers.length === 0) return null;
+
+    return (
+      <Card key={role}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Badge variant="outline" className={getRoleColor(role)}>
+              {role}
+            </Badge>
+            Rankings
+          </CardTitle>
+          <CardDescription>
+            {roleUsers.length} {roleUsers.length === 1 ? 'member' : 'members'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="data-table-header">
+                <TableHead className="w-16">Rank</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Team</TableHead>
+                <TableHead className="text-right">GP Added</TableHead>
+                <TableHead className="text-right">New Placements</TableHead>
+                <TableHead className="text-right">Renewals</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {roleUsers.map((user, index) => (
+                <TableRow key={user.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">
+                    {getRankIcon(index)}
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{user.teamName}</TableCell>
+                  <TableCell className="text-right font-semibold text-accent">
+                    £{user.gpAdded.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                  </TableCell>
+                  <TableCell className="text-right">{user.newPlacements}</TableCell>
+                  <TableCell className="text-right">{user.renewalCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -97,75 +160,38 @@ export default function Leaderboard() {
           Individual Leaderboard
         </h1>
         <p className="text-muted-foreground">
-          Performance rankings based on GP Added
+          Performance rankings based on GP Added by role
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Rankings</CardTitle>
-          <CardDescription>
-            Current year performance metrics for all active team members
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="data-table-header">
-                  <TableHead className="w-16">Rank</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead className="text-right">GP Added</TableHead>
-                  <TableHead className="text-right">New Placements</TableHead>
-                  <TableHead className="text-right">Renewals</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaderboard && leaderboard.length > 0 ? (
-                  leaderboard.map((user, index) => (
-                    <TableRow key={user.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {getRankIcon(index)}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-xs text-muted-foreground">{user.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getRoleColor(user.roleType)}>
-                          {user.roleType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{user.teamName}</TableCell>
-                      <TableCell className="text-right font-semibold text-accent">
-                        £{user.gpAdded.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
-                      </TableCell>
-                      <TableCell className="text-right">{user.newPlacements}</TableCell>
-                      <TableCell className="text-right">{user.renewalCount}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No data available yet
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, j) => (
+                    <Skeleton key={j} className="h-16 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : leaderboard && leaderboard.length > 0 ? (
+        <div className="space-y-6">
+          {roleGroups.map(role => renderRoleLeaderboard(role))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-center text-muted-foreground">No data available yet</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
