@@ -85,12 +85,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto flex h-20 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-3">
+            <Link to="/" className="flex flex-col items-center gap-1">
               <img src={peLogo} alt="Performance Energy" className="h-12 w-auto" />
-              <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Performance Energy</h1>
-                <p className="text-xs text-muted-foreground">Sales Insights</p>
-              </div>
+              <p className="text-xs text-muted-foreground">Sales Insights</p>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
