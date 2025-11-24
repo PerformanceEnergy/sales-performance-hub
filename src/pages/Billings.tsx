@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +94,31 @@ export default function Billings() {
     },
   });
 
+  // Fetch billing records
+  const { data: billingRecords } = useQuery({
+    queryKey: ['billing-records', currentYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('billing_records')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            role_type,
+            team_id,
+            teams:team_id (
+              team_name
+            )
+          )
+        `)
+        .eq('year', currentYear);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSaveTarget = () => {
     const value = parseFloat(targetValue);
     if (isNaN(value) || value <= 0) {
@@ -107,24 +132,55 @@ export default function Billings() {
     targetMutation.mutate(value);
   };
 
-  // Placeholder data - will be replaced with actual data from CSV uploads
+  // Calculate totals from billing records
+  const totals = useMemo(() => {
+    if (!billingRecords) return { revenue: 0, gp: 0, np: 0 };
+    
+    return billingRecords.reduce((acc, record) => ({
+      revenue: acc.revenue + Number(record.revenue_gbp),
+      gp: acc.gp + Number(record.gp_gbp),
+      np: acc.np + Number(record.np_gbp),
+    }), { revenue: 0, gp: 0, np: 0 });
+  }, [billingRecords]);
+
   const topMetrics = {
-    totalRevenue: 0,
-    totalGP: 0,
-    totalNP: 0,
+    totalRevenue: totals.revenue,
+    totalGP: totals.gp,
+    totalNP: totals.np,
     targetGP: targetData?.target_gp || 0,
-    remaining: (targetData?.target_gp || 0) - 0,
+    remaining: (targetData?.target_gp || 0) - totals.gp,
   };
 
   const isCEO = userProfile?.role_type === 'CEO';
 
-  const teamStats = [
-    { team: 'KG-2', revenue: 0, gp: 0, np: 0, percentage: 0 },
-    { team: 'DS-9', revenue: 0, gp: 0, np: 0, percentage: 0 },
-    { team: 'Drill Max', revenue: 0, gp: 0, np: 0, percentage: 0 },
-    { team: 'Ras Tanura', revenue: 0, gp: 0, np: 0, percentage: 0 },
-    { team: 'Prelude', revenue: 0, gp: 0, np: 0, percentage: 0 },
-  ];
+  // Calculate team stats
+  const teamStats = useMemo(() => {
+    if (!billingRecords) return [];
+    
+    const teams = new Map<string, { revenue: number; gp: number; np: number }>();
+    
+    billingRecords.forEach(record => {
+      const profile = record.profiles as any;
+      const teamName = profile?.teams?.team_name || 'No Team';
+      
+      if (!teams.has(teamName)) {
+        teams.set(teamName, { revenue: 0, gp: 0, np: 0 });
+      }
+      
+      const team = teams.get(teamName)!;
+      team.revenue += Number(record.revenue_gbp);
+      team.gp += Number(record.gp_gbp);
+      team.np += Number(record.np_gbp);
+    });
+    
+    return Array.from(teams.entries()).map(([name, data]) => ({
+      team: name,
+      revenue: data.revenue,
+      gp: data.gp,
+      np: data.np,
+      percentage: totals.gp > 0 ? (data.gp / totals.gp) * 100 : 0,
+    })).sort((a, b) => b.gp - a.gp);
+  }, [billingRecords, totals.gp]);
 
   const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
@@ -140,8 +196,30 @@ export default function Billings() {
   const roleGroups = ['BD', 'DT', '360', 'Manager', 'CEO'];
   
   const getLeaderboardByRole = (role: string) => {
-    // Placeholder - will be populated with actual data
-    return [];
+    if (!billingRecords) return [];
+    
+    // Aggregate billing records by user for this role
+    const userMap = new Map<string, any>();
+    
+    billingRecords.forEach(record => {
+      const profile = record.profiles as any;
+      if (profile?.role_type !== role) return;
+      
+      const userId = record.user_id;
+      if (!userMap.has(userId)) {
+        userMap.set(userId, {
+          id: userId,
+          name: profile.name,
+          roleType: profile.role_type,
+          teamName: profile.teams?.team_name || 'No Team',
+          billings: 0,
+        });
+      }
+      
+      userMap.get(userId)!.billings += Number(record.gp_gbp);
+    });
+    
+    return Array.from(userMap.values()).sort((a, b) => b.billings - a.billings);
   };
 
   const renderRoleLeaderboard = (role: string) => {
@@ -325,15 +403,23 @@ export default function Billings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teamStats.map((team) => (
-                <TableRow key={team.team} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{team.team}</TableCell>
-                  <TableCell className="text-right">£{team.revenue.toLocaleString('en-GB')}</TableCell>
-                  <TableCell className="text-right">£{team.gp.toLocaleString('en-GB')}</TableCell>
-                  <TableCell className="text-right">£{team.np.toLocaleString('en-GB')}</TableCell>
-                  <TableCell className="text-right">{team.percentage}%</TableCell>
+              {teamStats.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No billing data available yet. Upload CSV files to see team statistics.
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                teamStats.map((team) => (
+                  <TableRow key={team.team} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{team.team}</TableCell>
+                    <TableCell className="text-right">£{team.revenue.toLocaleString('en-GB', { maximumFractionDigits: 0 })}</TableCell>
+                    <TableCell className="text-right">£{team.gp.toLocaleString('en-GB', { maximumFractionDigits: 0 })}</TableCell>
+                    <TableCell className="text-right">£{team.np.toLocaleString('en-GB', { maximumFractionDigits: 0 })}</TableCell>
+                    <TableCell className="text-right">{team.percentage.toFixed(1)}%</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

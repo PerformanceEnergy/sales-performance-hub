@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_records: {
+        Row: {
+          created_at: string | null
+          gp_gbp: number
+          id: string
+          month: number
+          np_gbp: number
+          revenue_gbp: number
+          updated_at: string | null
+          upload_id: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          gp_gbp?: number
+          id?: string
+          month: number
+          np_gbp?: number
+          revenue_gbp?: number
+          updated_at?: string | null
+          upload_id?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          gp_gbp?: number
+          id?: string
+          month?: number
+          np_gbp?: number
+          revenue_gbp?: number
+          updated_at?: string | null
+          upload_id?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_records_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "billing_uploads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_targets: {
         Row: {
           created_at: string
