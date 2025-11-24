@@ -62,7 +62,7 @@ export default function BillingsUpload() {
                 .eq('is_correction', false)
                 .single();
 
-              const { data, error } = await supabase
+              const { data: uploadData, error } = await supabase
                 .from('billing_uploads')
                 .insert([{
                   month,
@@ -78,7 +78,25 @@ export default function BillingsUpload() {
                 .single();
 
               if (error) throw error;
-              resolve(data);
+
+              // Process the CSV to calculate aggregated billing data
+              const { error: processError } = await supabase.functions.invoke(
+                'process-billing-upload',
+                {
+                  body: {
+                    upload_id: uploadData.id,
+                    month,
+                    year: currentYear,
+                  },
+                }
+              );
+
+              if (processError) {
+                console.error('Error processing billing upload:', processError);
+                throw new Error('Failed to process billing data: ' + processError.message);
+              }
+
+              resolve(uploadData);
             } catch (err) {
               reject(err);
             }
