@@ -73,7 +73,7 @@ export default function SubmitDeal() {
       setIsFetchingRate(true);
       try {
         const response = await fetch(
-          `https://api.exchangerate.host/latest?base=${currency}&symbols=GBP`
+          `https://api.frankfurter.app/latest?from=${currency}&to=GBP`
         );
         const data = await response.json();
         if (data.rates && data.rates.GBP) {
@@ -274,15 +274,23 @@ export default function SubmitDeal() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="durationDays">Duration (Days, max 90) *</Label>
-                    <Input 
-                      id="durationDays" 
+                    <Select 
                       name="durationDays" 
-                      type="number"
-                      max="90"
                       value={durationDays}
-                      onChange={(e) => setDurationDays(e.target.value)}
-                      required 
-                    />
+                      onValueChange={setDurationDays}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select days" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 90 }, (_, i) => i + 1).map((day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="valueOriginalCurrency">Value (Original Currency) *</Label>
