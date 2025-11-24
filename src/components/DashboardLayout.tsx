@@ -83,11 +83,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4">
+        <div className="container mx-auto flex h-24 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex flex-col items-center gap-1">
-              <img src={peLogo} alt="Performance Energy" className="h-12 w-auto" />
-              <p className="text-xs text-muted-foreground">Sales Insights</p>
+            <Link to="/" className="flex flex-col items-center gap-2">
+              <img src={peLogo} alt="Performance Energy" className="h-16 w-auto object-contain" />
+              <p className="text-xs text-muted-foreground whitespace-nowrap">Sales Insights</p>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
