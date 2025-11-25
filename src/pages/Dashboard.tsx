@@ -21,13 +21,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Fetch user's profile to get role_type
+  // Fetch user's profile to get role_type and sales_role
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role_type')
+        .select('role_type, sales_role')
         .eq('id', user?.id)
         .single();
       
@@ -61,13 +61,19 @@ export default function Dashboard() {
       let rankings = { totalDeals: { rank: 0, total: 0 }, approvedDeals: { rank: 0, total: 0 }, pendingDeals: { rank: 0, total: 0 }, totalValue: { rank: 0, total: 0 } };
       
       if (userProfile?.role_type) {
-        // Get all users with same role
-        const { data: sameRoleUsers, error: profileError } = await supabase
+        // Get display role (sales_role if set, otherwise role_type)
+        const displayRole = (userProfile as any).sales_role || userProfile.role_type;
+        
+        // Get all users with same display role
+        const { data: allProfiles, error: profileError } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('role_type', userProfile.role_type);
+          .select('id, role_type, sales_role');
+        
+        if (!profileError && allProfiles) {
+          const sameRoleUsers = allProfiles.filter(p => 
+            ((p as any).sales_role || p.role_type) === displayRole
+          );
 
-        if (!profileError && sameRoleUsers) {
           const userIds = sameRoleUsers.map(p => p.id);
           
           // Get all deals for users with same role

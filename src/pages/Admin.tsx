@@ -29,6 +29,7 @@ export default function Admin() {
     id: string;
     name: string;
     role_type: string;
+    sales_role: string;
     team_id: string;
   } | null>(null);
 
@@ -89,6 +90,7 @@ export default function Admin() {
       id: profile.id,
       name: profile.name,
       role_type: profile.role_type,
+      sales_role: (profile as any).sales_role || '',
       team_id: profile.team_id || ''
     });
     setIsEditOpen(true);
@@ -106,6 +108,7 @@ export default function Admin() {
           user_id: editData.id,
           name: editData.name,
           role_type: editData.role_type,
+          sales_role: editData.sales_role || null,
           team_id: editData.team_id
         }
       });
@@ -347,6 +350,27 @@ export default function Admin() {
                     <SelectItem value="Admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-sales-role">Sales Board Role</Label>
+                <Select
+                  value={editData.sales_role}
+                  onValueChange={(value) => setEditData({ ...editData, sales_role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Same as Permission Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Same as Permission Role</SelectItem>
+                    <SelectItem value="BD">BD</SelectItem>
+                    <SelectItem value="DT">DT</SelectItem>
+                    <SelectItem value="360">360</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Override which role this user appears as on sales boards and leaderboards
+                </p>
               </div>
 
               <div className="space-y-2">
