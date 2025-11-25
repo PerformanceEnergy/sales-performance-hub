@@ -258,6 +258,7 @@ export type Database = {
           id: string
           name: string
           role_type: Database["public"]["Enums"]["role_type"]
+          sales_role: Database["public"]["Enums"]["role_type"] | null
           team_id: string | null
           updated_at: string | null
         }
@@ -268,6 +269,7 @@ export type Database = {
           id: string
           name: string
           role_type: Database["public"]["Enums"]["role_type"]
+          sales_role?: Database["public"]["Enums"]["role_type"] | null
           team_id?: string | null
           updated_at?: string | null
         }
@@ -278,6 +280,7 @@ export type Database = {
           id?: string
           name?: string
           role_type?: Database["public"]["Enums"]["role_type"]
+          sales_role?: Database["public"]["Enums"]["role_type"] | null
           team_id?: string | null
           updated_at?: string | null
         }

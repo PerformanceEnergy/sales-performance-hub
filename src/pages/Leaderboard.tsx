@@ -49,7 +49,8 @@ export default function Leaderboard() {
         return {
           id: profile.id,
           name: profile.name,
-          roleType: profile.role_type,
+          roleType: (profile as any).sales_role || profile.role_type,
+          actualRole: profile.role_type,
           teamName: profile.teams?.team_name || 'No Team',
           billings,
         };

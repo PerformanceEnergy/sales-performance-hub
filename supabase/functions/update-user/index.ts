@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { user_id, name, role_type, team_id } = await req.json()
+    const { user_id, name, role_type, sales_role, team_id } = await req.json()
 
     // Validate required fields
     if (!user_id) {
@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
       .update({
         name,
         role_type,
+        sales_role,
         team_id
       })
       .eq('id', user_id)

@@ -203,14 +203,16 @@ export default function Billings() {
     
     billingRecords.forEach(record => {
       const profile = record.profiles as any;
-      if (profile?.role_type !== role) return;
+      const displayRole = profile?.sales_role || profile?.role_type;
+      if (displayRole !== role) return;
       
       const userId = record.user_id;
       if (!userMap.has(userId)) {
         userMap.set(userId, {
           id: userId,
           name: profile.name,
-          roleType: profile.role_type,
+          roleType: displayRole,
+          actualRole: profile.role_type,
           teamName: profile.teams?.team_name || 'No Team',
           billings: 0,
         });
