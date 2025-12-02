@@ -157,6 +157,7 @@ export type Database = {
           dt_percent: number | null
           dt_user_id: string | null
           duration_days: number | null
+          estimated_days_12_months: number | null
           gp_daily: number | null
           id: string
           is_renewal: boolean | null
@@ -172,6 +173,7 @@ export type Database = {
           submitted_by_user_id: string
           submitted_month: number | null
           submitted_year: number | null
+          total_estimated_opportunity_gbp: number | null
           updated_at: string | null
           user_360_id: string | null
           value_converted_gbp: number | null
@@ -191,6 +193,7 @@ export type Database = {
           dt_percent?: number | null
           dt_user_id?: string | null
           duration_days?: number | null
+          estimated_days_12_months?: number | null
           gp_daily?: number | null
           id?: string
           is_renewal?: boolean | null
@@ -206,6 +209,7 @@ export type Database = {
           submitted_by_user_id: string
           submitted_month?: number | null
           submitted_year?: number | null
+          total_estimated_opportunity_gbp?: number | null
           updated_at?: string | null
           user_360_id?: string | null
           value_converted_gbp?: number | null
@@ -225,6 +229,7 @@ export type Database = {
           dt_percent?: number | null
           dt_user_id?: string | null
           duration_days?: number | null
+          estimated_days_12_months?: number | null
           gp_daily?: number | null
           id?: string
           is_renewal?: boolean | null
@@ -240,6 +245,7 @@ export type Database = {
           submitted_by_user_id?: string
           submitted_month?: number | null
           submitted_year?: number | null
+          total_estimated_opportunity_gbp?: number | null
           updated_at?: string | null
           user_360_id?: string | null
           value_converted_gbp?: number | null

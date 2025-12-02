@@ -163,6 +163,14 @@ export default function SubmitDeal() {
         dealData.worker_name = formData.get('workerName') as string;
         dealData.gp_daily = parseFloat(formData.get('gpDaily') as string);
         dealData.duration_days = parseInt(formData.get('durationDays') as string);
+        
+        // Save estimated opportunity values if provided
+        if (formData.get('estimatedDays12Months')) {
+          dealData.estimated_days_12_months = parseInt(formData.get('estimatedDays12Months') as string);
+        }
+        if (totalEstimatedOpportunity) {
+          dealData.total_estimated_opportunity_gbp = parseFloat(totalEstimatedOpportunity);
+        }
       } else if (dealType === 'Service') {
         dealData.service_name = formData.get('serviceName') as string;
         dealData.service_description = formData.get('serviceDescription') as string;
