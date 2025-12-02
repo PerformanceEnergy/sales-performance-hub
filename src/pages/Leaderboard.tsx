@@ -61,13 +61,19 @@ export default function Leaderboard() {
           deal.user_360_id === profile.id
         ) || [];
 
-        // Calculate total projected (all pipeline deals with user's percentage)
+        // Calculate total projected (use Total Estimated Opportunity Value for Contract deals, value_converted_gbp for others)
         const projected = userProjectedDeals.reduce((sum, deal) => {
           let percent = 0;
           if (deal.bd_user_id === profile.id) percent = deal.bd_percent || 0;
           if (deal.dt_user_id === profile.id) percent = deal.dt_percent || 0;
           if (deal.user_360_id === profile.id) percent = deal.percent_360 || 0;
-          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+          
+          // Use total_estimated_opportunity_gbp for Contract deals if available, otherwise value_converted_gbp
+          const dealValue = (deal.deal_type === 'Contract' && deal.total_estimated_opportunity_gbp) 
+            ? Number(deal.total_estimated_opportunity_gbp)
+            : Number(deal.value_converted_gbp) || 0;
+          
+          return sum + dealValue * (percent / 100);
         }, 0);
 
         return {
@@ -140,13 +146,19 @@ export default function Leaderboard() {
           memberIds.includes(deal.user_360_id)
         ) || [];
 
-        // Calculate total projected
+        // Calculate total projected (use Total Estimated Opportunity Value for Contract deals, value_converted_gbp for others)
         const projected = teamProjectedDeals.reduce((sum, deal) => {
           let percent = 0;
           if (memberIds.includes(deal.bd_user_id)) percent += (deal.bd_percent || 0);
           if (memberIds.includes(deal.dt_user_id)) percent += (deal.dt_percent || 0);
           if (memberIds.includes(deal.user_360_id)) percent += (deal.percent_360 || 0);
-          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+          
+          // Use total_estimated_opportunity_gbp for Contract deals if available, otherwise value_converted_gbp
+          const dealValue = (deal.deal_type === 'Contract' && deal.total_estimated_opportunity_gbp) 
+            ? Number(deal.total_estimated_opportunity_gbp)
+            : Number(deal.value_converted_gbp) || 0;
+          
+          return sum + dealValue * (percent / 100);
         }, 0);
 
         return {
