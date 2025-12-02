@@ -766,14 +766,14 @@ export default function Admin() {
                   <div className="space-y-2">
                     <Label htmlFor="edit-bd-rep">BD Rep</Label>
                     <Select
-                      value={editDealData.bd_user_id || ''}
-                      onValueChange={(value) => setEditDealData({ ...editDealData, bd_user_id: value || null })}
+                      value={editDealData.bd_user_id || 'none'}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, bd_user_id: value === 'none' ? null : value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select BD" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {profiles.filter(p => (p as any).sales_role === 'BD' || p.role_type === 'BD').map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
@@ -796,14 +796,14 @@ export default function Admin() {
                   <div className="space-y-2">
                     <Label htmlFor="edit-dt-rep">DT Rep</Label>
                     <Select
-                      value={editDealData.dt_user_id || ''}
-                      onValueChange={(value) => setEditDealData({ ...editDealData, dt_user_id: value || null })}
+                      value={editDealData.dt_user_id || 'none'}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, dt_user_id: value === 'none' ? null : value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select DT" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {profiles.filter(p => (p as any).sales_role === 'DT' || p.role_type === 'DT').map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
@@ -826,14 +826,14 @@ export default function Admin() {
                   <div className="space-y-2">
                     <Label htmlFor="edit-360-rep">360 Rep</Label>
                     <Select
-                      value={editDealData.user_360_id || ''}
-                      onValueChange={(value) => setEditDealData({ ...editDealData, user_360_id: value || null })}
+                      value={editDealData.user_360_id || 'none'}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, user_360_id: value === 'none' ? null : value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select 360" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {profiles.filter(p => (p as any).sales_role === '360' || p.role_type === '360').map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
