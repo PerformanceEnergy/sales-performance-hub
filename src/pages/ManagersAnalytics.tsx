@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,25 +25,8 @@ export default function ManagersAnalytics() {
   const [selectedPerson, setSelectedPerson] = useState<string>('all');
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
 
-  // Check if user has manager access
-  const { data: userProfile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const hasManagerAccess = userProfile?.role_type === 'Manager' || 
-                          userProfile?.role_type === 'CEO' || 
-                          userProfile?.role_type === 'Admin';
+  // Use secure role check from user_roles table
+  const { isAdmin: hasManagerAccess, isLoading: isLoadingRole } = useUserRole();
 
   // Fetch all data
   const { data: analyticsData, isLoading } = useQuery({
@@ -251,7 +235,7 @@ export default function ManagersAnalytics() {
     return currentTotal + (avgMonthly * remainingMonths);
   }, [monthlyTrends, filteredDeals]);
 
-  if (isLoadingProfile) {
+  if (isLoadingRole) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-12 w-64" />

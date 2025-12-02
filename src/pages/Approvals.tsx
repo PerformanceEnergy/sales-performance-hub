@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Calendar, DollarSign, User, MapPin, Clock, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,19 +27,8 @@ export default function Approvals() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
 
-  const { data: userProfile } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Use secure role check from user_roles table
+  const { isAdmin, isLoading: isLoadingRole } = useUserRole();
 
   const { data: profiles } = useQuery({
     queryKey: ['profiles'],
@@ -64,7 +54,7 @@ export default function Approvals() {
       if (error) throw error;
       return data;
     },
-    enabled: ['Manager', 'CEO', 'Admin'].includes(userProfile?.role_type || ''),
+    enabled: isAdmin,
   });
 
   const getProfileName = (userId: string | null) => {
@@ -164,7 +154,15 @@ export default function Approvals() {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-  if (!['Manager', 'CEO', 'Admin'].includes(userProfile?.role_type || '')) {
+  if (isLoadingRole) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">

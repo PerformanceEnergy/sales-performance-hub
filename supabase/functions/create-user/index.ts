@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Authorization check - verify caller has admin privileges
+    // Authorization check - verify caller has admin privileges using user_roles table
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
@@ -41,14 +41,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check caller's role
-    const { data: callerProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role_type')
-      .eq('id', caller.id)
+    // Check caller's role from user_roles table
+    const { data: callerRole, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', caller.id)
       .single()
 
-    if (profileError || !callerProfile) {
+    if (roleError || !callerRole) {
       return new Response(
         JSON.stringify({ error: 'Could not verify user role' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
@@ -56,8 +56,8 @@ Deno.serve(async (req) => {
     }
 
     const allowedRoles = ['Admin', 'Manager', 'CEO']
-    if (!allowedRoles.includes(callerProfile.role_type)) {
-      console.log(`Unauthorized access attempt by user ${caller.id} with role ${callerProfile.role_type}`)
+    if (!allowedRoles.includes(callerRole.role)) {
+      console.log(`Unauthorized access attempt by user ${caller.id} with role ${callerRole.role}`)
       return new Response(
         JSON.stringify({ error: 'Forbidden: Insufficient permissions' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Update the profile with team and role
+    // Update the profile with team (role_type stays for backwards compatibility)
     const { error: updateProfileError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -103,6 +103,22 @@ Deno.serve(async (req) => {
       console.error('Profile error:', updateProfileError)
       return new Response(
         JSON.stringify({ error: updateProfileError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Insert role into user_roles table (the secure source of truth)
+    const { error: roleInsertError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: authData.user.id,
+        role: role_type
+      })
+
+    if (roleInsertError) {
+      console.error('Role insert error:', roleInsertError)
+      return new Response(
+        JSON.stringify({ error: roleInsertError.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }

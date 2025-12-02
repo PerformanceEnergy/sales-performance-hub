@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,27 +16,11 @@ import type { Tables } from '@/integrations/supabase/types';
 import TargetsManagement from '@/components/admin/TargetsManagement';
 
 export default function Admin() {
-  const { user } = useAuth();
-  
-  // Check user role for access control
-  const { data: currentUserProfile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: ['current-user-profile', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role_type')
-        .eq('id', user?.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const isAuthorized = ['Admin', 'Manager', 'CEO'].includes(currentUserProfile?.role_type || '');
+  // Check user role from secure user_roles table
+  const { isAdmin, isLoading: isLoadingRole } = useUserRole();
 
   // Show 403 page for unauthorized users
-  if (!isLoadingProfile && !isAuthorized) {
+  if (!isLoadingRole && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <ShieldAlert className="h-16 w-16 text-destructive" />
@@ -49,7 +32,7 @@ export default function Admin() {
     );
   }
 
-  if (isLoadingProfile) {
+  if (isLoadingRole) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
