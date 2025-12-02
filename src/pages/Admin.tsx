@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, UserPlus, Users, Pencil } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, UserPlus, Users, Pencil, FileEdit } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 export default function Admin() {
@@ -16,6 +18,7 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Tables<'profiles'>[]>([]);
   const [teams, setTeams] = useState<Tables<'teams'>[]>([]);
+  const [deals, setDeals] = useState<Tables<'deals'>[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -35,18 +38,28 @@ export default function Admin() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  const [editDealData, setEditDealData] = useState<{
+    id: string;
+    estimated_days_12_months: number | null;
+    total_estimated_opportunity_gbp: number | null;
+  } | null>(null);
+
+  const [isEditDealOpen, setIsEditDealOpen] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
-    const [profilesRes, teamsRes] = await Promise.all([
+    const [profilesRes, teamsRes, dealsRes] = await Promise.all([
       supabase.from('profiles').select('*, teams(team_name)').order('name'),
-      supabase.from('teams').select('*').eq('active', true).order('team_name')
+      supabase.from('teams').select('*').eq('active', true).order('team_name'),
+      supabase.from('deals').select('*').order('created_at', { ascending: false })
     ]);
 
     if (profilesRes.data) setProfiles(profilesRes.data);
     if (teamsRes.data) setTeams(teamsRes.data);
+    if (dealsRes.data) setDeals(dealsRes.data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,6 +147,51 @@ export default function Admin() {
     }
   };
 
+  const handleEditDeal = (deal: Tables<'deals'>) => {
+    setEditDealData({
+      id: deal.id,
+      estimated_days_12_months: deal.estimated_days_12_months,
+      total_estimated_opportunity_gbp: deal.total_estimated_opportunity_gbp,
+    });
+    setIsEditDealOpen(true);
+  };
+
+  const handleUpdateDeal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editDealData) return;
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          estimated_days_12_months: editDealData.estimated_days_12_months,
+          total_estimated_opportunity_gbp: editDealData.total_estimated_opportunity_gbp,
+        })
+        .eq('id', editDealData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Deal updated',
+        description: 'Deal projection values updated successfully'
+      });
+
+      setIsEditDealOpen(false);
+      setEditDealData(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'BD': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
@@ -143,16 +201,35 @@ export default function Admin() {
     }
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'Approved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'Submitted': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'Under Review': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'Rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'Draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          User Administration
+          Administration
         </h1>
         <p className="text-muted-foreground">
-          Manage users, teams, and role assignments
+          Manage users, teams, and deals
         </p>
       </div>
+
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="deals">Deals</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6">
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Create User Form */}
@@ -405,6 +482,137 @@ export default function Admin() {
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Update User
+                </Button>
+              </div>
+            </form>
+          )}
+          </DialogContent>
+        </Dialog>
+        </TabsContent>
+
+        <TabsContent value="deals" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileEdit className="h-5 w-5" />
+                All Deals
+              </CardTitle>
+              <CardDescription>
+                {deals.length} deal{deals.length !== 1 ? 's' : ''} in the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border max-h-[600px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">GBP Value</TableHead>
+                      <TableHead className="text-right">Estimated Opp.</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deals.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No deals found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      deals.map((deal) => (
+                        <TableRow key={deal.id}>
+                          <TableCell className="font-medium">{deal.client}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{deal.deal_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(deal.status || 'Draft')}`}>
+                              {deal.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            £{Number(deal.value_converted_gbp || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {deal.total_estimated_opportunity_gbp 
+                              ? `£${Number(deal.total_estimated_opportunity_gbp).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditDeal(deal)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Deal Dialog */}
+      <Dialog open={isEditDealOpen} onOpenChange={setIsEditDealOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Deal Projections</DialogTitle>
+            <DialogDescription>
+              Update estimated opportunity values for this deal
+            </DialogDescription>
+          </DialogHeader>
+          {editDealData && (
+            <form onSubmit={handleUpdateDeal} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="estimated-days">Estimated Days (Next 12 Months)</Label>
+                <Input
+                  id="estimated-days"
+                  type="number"
+                  value={editDealData.estimated_days_12_months || ''}
+                  onChange={(e) => setEditDealData({ 
+                    ...editDealData, 
+                    estimated_days_12_months: e.target.value ? parseInt(e.target.value) : null 
+                  })}
+                  placeholder="Enter days"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="estimated-opportunity">Total Estimated Opportunity (GBP)</Label>
+                <Input
+                  id="estimated-opportunity"
+                  type="number"
+                  step="0.01"
+                  value={editDealData.total_estimated_opportunity_gbp || ''}
+                  onChange={(e) => setEditDealData({ 
+                    ...editDealData, 
+                    total_estimated_opportunity_gbp: e.target.value ? parseFloat(e.target.value) : null 
+                  })}
+                  placeholder="Enter GBP amount"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDealOpen(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Update Deal
                 </Button>
               </div>
             </form>
