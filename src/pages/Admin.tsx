@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, UserPlus, Users, Pencil, FileEdit } from 'lucide-react';
+import { Loader2, UserPlus, Users, Pencil, FileEdit, Target } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import TargetsManagement from '@/components/admin/TargetsManagement';
 
 export default function Admin() {
   const { toast } = useToast();
@@ -243,6 +244,7 @@ export default function Admin() {
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="deals">Deals</TabsTrigger>
+          <TabsTrigger value="targets">Targets</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-6">
@@ -574,6 +576,10 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="targets" className="space-y-6">
+          <TargetsManagement />
         </TabsContent>
       </Tabs>
 

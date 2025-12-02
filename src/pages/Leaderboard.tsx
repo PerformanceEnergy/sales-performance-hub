@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, TrendingUp, Award, Medal, Users } from 'lucide-react';
+import { Trophy, TrendingUp, Award, Medal, Users, Target } from 'lucide-react';
+import TargetsLeaderboard from '@/components/leaderboard/TargetsLeaderboard';
 
 export default function Leaderboard() {
   const { data: leaderboard, isLoading: isLoadingIndividual } = useQuery({
@@ -275,6 +276,10 @@ export default function Leaderboard() {
         <TabsList>
           <TabsTrigger value="individual">Individual</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="targets">
+            <Target className="h-4 w-4 mr-1" />
+            Targets
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="individual" className="space-y-6">
@@ -375,6 +380,10 @@ export default function Leaderboard() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="targets" className="space-y-6">
+          <TargetsLeaderboard />
         </TabsContent>
       </Tabs>
     </div>
