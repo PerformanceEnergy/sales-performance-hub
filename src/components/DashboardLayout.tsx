@@ -43,7 +43,7 @@ const navigation = [
   { name: 'Projections', href: '/projections', icon: Target },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: LineChart },
-  { name: 'Admin', href: '/admin', icon: User },
+  { name: 'Admin', href: '/admin', icon: User, adminOnly: true },
 ];
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -95,6 +95,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 const showBadge = item.href === '/approvals' && pendingCount && pendingCount > 0;
+                
+                // Hide admin-only items for non-admin users
+                if (item.adminOnly && !['Admin', 'Manager', 'CEO'].includes(userProfile?.role_type || '')) {
+                  return null;
+                }
                 
                 return (
                   <Link key={item.name} to={item.href}>

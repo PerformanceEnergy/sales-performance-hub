@@ -67,13 +67,55 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Authorization check - verify caller has admin privileges
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: caller }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    // Check caller's role
+    const { data: callerProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('role_type')
+      .eq('id', caller.id)
+      .single();
+
+    if (profileError || !callerProfile) {
+      return new Response(
+        JSON.stringify({ error: 'Could not verify user role' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    const allowedRoles = ['Admin', 'Manager', 'CEO'];
+    if (!allowedRoles.includes(callerProfile.role_type)) {
+      console.log(`Unauthorized billing upload attempt by user ${caller.id} with role ${callerProfile.role_type}`);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Insufficient permissions' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
     const { upload_id, month, year } = await req.json();
 
     if (!upload_id || !month || !year) {
       throw new Error('Missing required parameters: upload_id, month, year');
     }
 
-    console.log(`Processing upload ${upload_id} for ${month}/${year}`);
+    console.log(`Processing upload ${upload_id} for ${month}/${year} by admin ${caller.id}`);
 
     // Fetch the upload data
     const { data: upload, error: uploadError } = await supabaseClient
