@@ -20,13 +20,21 @@ export default function Leaderboard() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all approved deals
+      // Fetch all approved deals for billings
       const { data: deals, error: dealsError } = await supabase
         .from('deals')
         .select('*')
         .eq('status', 'Approved');
 
       if (dealsError) throw dealsError;
+
+      // Fetch all submitted/in-review deals for projections
+      const { data: projectedDeals, error: projectedDealsError } = await supabase
+        .from('deals')
+        .select('*')
+        .in('status', ['Submitted', 'Under Review', 'Approved']);
+
+      if (projectedDealsError) throw projectedDealsError;
 
       // Calculate metrics for each user
       const userMetrics = profiles?.map((profile) => {
@@ -46,6 +54,22 @@ export default function Leaderboard() {
           return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
         }, 0);
 
+        // Filter projected deals where user is involved
+        const userProjectedDeals = projectedDeals?.filter((deal) => 
+          deal.bd_user_id === profile.id ||
+          deal.dt_user_id === profile.id ||
+          deal.user_360_id === profile.id
+        ) || [];
+
+        // Calculate total projected (all pipeline deals with user's percentage)
+        const projected = userProjectedDeals.reduce((sum, deal) => {
+          let percent = 0;
+          if (deal.bd_user_id === profile.id) percent = deal.bd_percent || 0;
+          if (deal.dt_user_id === profile.id) percent = deal.dt_percent || 0;
+          if (deal.user_360_id === profile.id) percent = deal.percent_360 || 0;
+          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+        }, 0);
+
         return {
           id: profile.id,
           name: profile.name,
@@ -53,6 +77,7 @@ export default function Leaderboard() {
           actualRole: profile.role_type,
           teamName: profile.teams?.team_name || 'No Team',
           billings,
+          projected,
         };
       }) || [];
 
@@ -72,13 +97,21 @@ export default function Leaderboard() {
 
       if (teamsError) throw teamsError;
 
-      // Fetch all approved deals
+      // Fetch all approved deals for billings
       const { data: deals, error: dealsError } = await supabase
         .from('deals')
         .select('*')
         .eq('status', 'Approved');
 
       if (dealsError) throw dealsError;
+
+      // Fetch all submitted/in-review deals for projections
+      const { data: projectedDeals, error: projectedDealsError } = await supabase
+        .from('deals')
+        .select('*')
+        .in('status', ['Submitted', 'Under Review', 'Approved']);
+
+      if (projectedDealsError) throw projectedDealsError;
 
       // Calculate metrics for each team
       const teamMetrics = teamsData?.map((team) => {
@@ -100,11 +133,28 @@ export default function Leaderboard() {
           return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
         }, 0);
 
+        // Filter projected deals where team members are involved
+        const teamProjectedDeals = projectedDeals?.filter((deal) => 
+          memberIds.includes(deal.bd_user_id) ||
+          memberIds.includes(deal.dt_user_id) ||
+          memberIds.includes(deal.user_360_id)
+        ) || [];
+
+        // Calculate total projected
+        const projected = teamProjectedDeals.reduce((sum, deal) => {
+          let percent = 0;
+          if (memberIds.includes(deal.bd_user_id)) percent += (deal.bd_percent || 0);
+          if (memberIds.includes(deal.dt_user_id)) percent += (deal.dt_percent || 0);
+          if (memberIds.includes(deal.user_360_id)) percent += (deal.percent_360 || 0);
+          return sum + (Number(deal.value_converted_gbp) || 0) * (percent / 100);
+        }, 0);
+
         return {
           id: team.id,
           teamName: team.team_name,
           memberCount: team.profiles?.length || 0,
           billings,
+          projected,
         };
       }) || [];
 
@@ -164,6 +214,7 @@ export default function Leaderboard() {
                 <TableHead>Role</TableHead>
                 <TableHead>Team</TableHead>
                 <TableHead className="text-right">GP Added to Date</TableHead>
+                <TableHead className="text-right">Projected</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -183,6 +234,9 @@ export default function Leaderboard() {
                   <TableCell className="text-muted-foreground">{user.teamName}</TableCell>
                   <TableCell className="text-right font-semibold text-accent">
                     £{user.billings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-primary">
+                    £{user.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
                   </TableCell>
                 </TableRow>
               ))}
@@ -275,6 +329,7 @@ export default function Leaderboard() {
                       <TableHead>Team Name</TableHead>
                       <TableHead className="text-right">Members</TableHead>
                       <TableHead className="text-right">GP Added to Date</TableHead>
+                      <TableHead className="text-right">Projected</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -291,6 +346,9 @@ export default function Leaderboard() {
                         </TableCell>
                         <TableCell className="text-right font-semibold text-accent">
                           £{team.billings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-primary">
+                          £{team.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
                         </TableCell>
                       </TableRow>
                     ))}
