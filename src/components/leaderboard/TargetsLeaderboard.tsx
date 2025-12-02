@@ -293,8 +293,12 @@ export default function TargetsLeaderboard() {
                       <TableHead className="text-right">Target</TableHead>
                       <TableHead className="text-right">Actual GP Added</TableHead>
                       <TableHead className="text-right">Variance</TableHead>
-                      <TableHead className="text-right">Projected</TableHead>
-                      <TableHead className="text-right">Proj. Variance</TableHead>
+                      {viewPeriod === 'yearly' && (
+                        <>
+                          <TableHead className="text-right">Projected</TableHead>
+                          <TableHead className="text-right">Proj. Variance</TableHead>
+                        </>
+                      )}
                       <TableHead className="w-32">Progress</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -318,15 +322,19 @@ export default function TargetsLeaderboard() {
                             {user.variance >= 0 ? '+' : ''}{user.variance.toFixed(1)}%
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-primary">
-                          £{user.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className={`flex items-center justify-end gap-1 ${getVarianceColor(user.projectedVariance)}`}>
-                            {getVarianceIcon(user.projectedVariance)}
-                            {user.projectedVariance >= 0 ? '+' : ''}{user.projectedVariance.toFixed(1)}%
-                          </div>
-                        </TableCell>
+                        {viewPeriod === 'yearly' && (
+                          <>
+                            <TableCell className="text-right font-semibold text-primary">
+                              £{user.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className={`flex items-center justify-end gap-1 ${getVarianceColor(user.projectedVariance)}`}>
+                                {getVarianceIcon(user.projectedVariance)}
+                                {user.projectedVariance >= 0 ? '+' : ''}{user.projectedVariance.toFixed(1)}%
+                              </div>
+                            </TableCell>
+                          </>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={Math.min(user.progress, 100)} className="h-2 flex-1" />
@@ -375,8 +383,12 @@ export default function TargetsLeaderboard() {
                       <TableHead className="text-right">Target</TableHead>
                       <TableHead className="text-right">Actual GP Added</TableHead>
                       <TableHead className="text-right">Variance</TableHead>
-                      <TableHead className="text-right">Projected</TableHead>
-                      <TableHead className="text-right">Proj. Variance</TableHead>
+                      {viewPeriod === 'yearly' && (
+                        <>
+                          <TableHead className="text-right">Projected</TableHead>
+                          <TableHead className="text-right">Proj. Variance</TableHead>
+                        </>
+                      )}
                       <TableHead className="w-32">Progress</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -399,15 +411,19 @@ export default function TargetsLeaderboard() {
                             {team.variance >= 0 ? '+' : ''}{team.variance.toFixed(1)}%
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-primary">
-                          £{team.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className={`flex items-center justify-end gap-1 ${getVarianceColor(team.projectedVariance)}`}>
-                            {getVarianceIcon(team.projectedVariance)}
-                            {team.projectedVariance >= 0 ? '+' : ''}{team.projectedVariance.toFixed(1)}%
-                          </div>
-                        </TableCell>
+                        {viewPeriod === 'yearly' && (
+                          <>
+                            <TableCell className="text-right font-semibold text-primary">
+                              £{team.projected.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className={`flex items-center justify-end gap-1 ${getVarianceColor(team.projectedVariance)}`}>
+                                {getVarianceIcon(team.projectedVariance)}
+                                {team.projectedVariance >= 0 ? '+' : ''}{team.projectedVariance.toFixed(1)}%
+                              </div>
+                            </TableCell>
+                          </>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={Math.min(team.progress, 100)} className="h-2 flex-1" />
