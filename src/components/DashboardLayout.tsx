@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,20 +50,7 @@ const navigation = [
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
-
-  const { data: userProfile } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { isAdmin } = useUserRole();
 
   const { data: pendingCount } = useQuery({
     queryKey: ['pending-approvals-count'],
@@ -75,7 +63,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       if (error) throw error;
       return count || 0;
     },
-    enabled: ['Manager', 'CEO', 'Admin'].includes(userProfile?.role_type || ''),
+    enabled: isAdmin,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
@@ -96,8 +84,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 const isActive = location.pathname === item.href;
                 const showBadge = item.href === '/approvals' && pendingCount && pendingCount > 0;
                 
-                // Hide admin-only items for non-admin users
-                if (item.adminOnly && !['Admin', 'Manager', 'CEO'].includes(userProfile?.role_type || '')) {
+                // Hide admin-only items for non-admin users (using secure user_roles)
+                if (item.adminOnly && !isAdmin) {
                   return null;
                 }
                 
