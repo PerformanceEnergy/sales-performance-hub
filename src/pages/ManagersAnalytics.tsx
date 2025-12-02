@@ -214,7 +214,7 @@ export default function ManagersAnalytics() {
   const monthlyTrends = useMemo(() => {
     if (!filteredDeals.length) return [];
     
-    const monthsData: Record<string, { month: string; gpAdded: number; deals: number }> = {};
+    const monthsData: Record<string, { monthKey: string; month: string; gpAdded: number; deals: number }> = {};
     
     filteredDeals.forEach(deal => {
       const date = new Date(deal.created_at);
@@ -222,6 +222,7 @@ export default function ManagersAnalytics() {
       
       if (!monthsData[monthKey]) {
         monthsData[monthKey] = {
+          monthKey,
           month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           gpAdded: 0,
           deals: 0,
@@ -234,7 +235,9 @@ export default function ManagersAnalytics() {
       }
     });
     
-    return Object.values(monthsData).sort((a, b) => a.month.localeCompare(b.month));
+    return Object.entries(monthsData)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([, data]) => data);
   }, [filteredDeals]);
 
   // Calculate projection
