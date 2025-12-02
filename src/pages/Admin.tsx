@@ -154,6 +154,12 @@ export default function Admin() {
     setIsLoading(true);
 
     try {
+      // Calculate total estimated opportunity if it's a Contract deal
+      let calculatedOpportunity = editDealData.total_estimated_opportunity_gbp;
+      if (editDealData.deal_type === 'Contract' && editDealData.gp_daily && editDealData.estimated_days_12_months) {
+        calculatedOpportunity = editDealData.gp_daily * editDealData.estimated_days_12_months;
+      }
+
       const { error } = await supabase
         .from('deals')
         .update({
@@ -170,7 +176,7 @@ export default function Admin() {
           value_original_currency: editDealData.value_original_currency,
           value_converted_gbp: editDealData.value_converted_gbp,
           estimated_days_12_months: editDealData.estimated_days_12_months,
-          total_estimated_opportunity_gbp: editDealData.total_estimated_opportunity_gbp,
+          total_estimated_opportunity_gbp: calculatedOpportunity,
           bd_user_id: editDealData.bd_user_id,
           bd_percent: editDealData.bd_percent,
           dt_user_id: editDealData.dt_user_id,
@@ -753,9 +759,16 @@ export default function Admin() {
                     id="edit-total-opportunity"
                     type="number"
                     step="0.01"
-                    value={editDealData.total_estimated_opportunity_gbp || ''}
-                    onChange={(e) => setEditDealData({ ...editDealData, total_estimated_opportunity_gbp: e.target.value ? parseFloat(e.target.value) : null })}
+                    value={editDealData.gp_daily && editDealData.estimated_days_12_months 
+                      ? (editDealData.gp_daily * editDealData.estimated_days_12_months).toFixed(2)
+                      : editDealData.total_estimated_opportunity_gbp || ''}
+                    readOnly
+                    className="bg-muted"
+                    placeholder="Auto-calculated"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated as: GP Daily × Estimated Days (12 months)
+                  </p>
                 </div>
               )}
 
