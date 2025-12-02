@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,11 +12,50 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, UserPlus, Users, Pencil, FileEdit, Target } from 'lucide-react';
+import { Loader2, UserPlus, Users, Pencil, FileEdit, Target, ShieldAlert } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 import TargetsManagement from '@/components/admin/TargetsManagement';
 
 export default function Admin() {
+  const { user } = useAuth();
+  
+  // Check user role for access control
+  const { data: currentUserProfile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['current-user-profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role_type')
+        .eq('id', user?.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isAuthorized = ['Admin', 'Manager', 'CEO'].includes(currentUserProfile?.role_type || '');
+
+  // Show 403 page for unauthorized users
+  if (!isLoadingProfile && !isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <ShieldAlert className="h-16 w-16 text-destructive" />
+        <h1 className="text-3xl font-bold text-foreground">403 - Access Denied</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          You do not have permission to access this page. Only administrators, managers, and executives can access this area.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Tables<'profiles'>[]>([]);
