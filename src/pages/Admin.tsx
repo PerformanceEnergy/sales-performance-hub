@@ -38,12 +38,7 @@ export default function Admin() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const [editDealData, setEditDealData] = useState<{
-    id: string;
-    estimated_days_12_months: number | null;
-    total_estimated_opportunity_gbp: number | null;
-  } | null>(null);
-
+  const [editDealData, setEditDealData] = useState<Tables<'deals'> | null>(null);
   const [isEditDealOpen, setIsEditDealOpen] = useState(false);
 
   useEffect(() => {
@@ -148,11 +143,7 @@ export default function Admin() {
   };
 
   const handleEditDeal = (deal: Tables<'deals'>) => {
-    setEditDealData({
-      id: deal.id,
-      estimated_days_12_months: deal.estimated_days_12_months,
-      total_estimated_opportunity_gbp: deal.total_estimated_opportunity_gbp,
-    });
+    setEditDealData(deal);
     setIsEditDealOpen(true);
   };
 
@@ -166,8 +157,27 @@ export default function Admin() {
       const { error } = await supabase
         .from('deals')
         .update({
+          client: editDealData.client,
+          location: editDealData.location,
+          deal_type: editDealData.deal_type,
+          placement_id: editDealData.placement_id,
+          worker_name: editDealData.worker_name,
+          service_name: editDealData.service_name,
+          service_description: editDealData.service_description,
+          currency: editDealData.currency,
+          gp_daily: editDealData.gp_daily,
+          duration_days: editDealData.duration_days,
+          value_original_currency: editDealData.value_original_currency,
+          value_converted_gbp: editDealData.value_converted_gbp,
           estimated_days_12_months: editDealData.estimated_days_12_months,
           total_estimated_opportunity_gbp: editDealData.total_estimated_opportunity_gbp,
+          bd_user_id: editDealData.bd_user_id,
+          bd_percent: editDealData.bd_percent,
+          dt_user_id: editDealData.dt_user_id,
+          dt_percent: editDealData.dt_percent,
+          user_360_id: editDealData.user_360_id,
+          percent_360: editDealData.percent_360,
+          status: editDealData.status,
         })
         .eq('id', editDealData.id);
 
@@ -175,7 +185,7 @@ export default function Admin() {
 
       toast({
         title: 'Deal updated',
-        description: 'Deal projection values updated successfully'
+        description: 'Deal has been updated successfully'
       });
 
       setIsEditDealOpen(false);
@@ -563,45 +573,309 @@ export default function Admin() {
 
       {/* Edit Deal Dialog */}
       <Dialog open={isEditDealOpen} onOpenChange={setIsEditDealOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Deal Projections</DialogTitle>
+            <DialogTitle>Edit Deal</DialogTitle>
             <DialogDescription>
-              Update estimated opportunity values for this deal
+              Update deal information and values
             </DialogDescription>
           </DialogHeader>
           {editDealData && (
             <form onSubmit={handleUpdateDeal} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="estimated-days">Estimated Days (Next 12 Months)</Label>
-                <Input
-                  id="estimated-days"
-                  type="number"
-                  value={editDealData.estimated_days_12_months || ''}
-                  onChange={(e) => setEditDealData({ 
-                    ...editDealData, 
-                    estimated_days_12_months: e.target.value ? parseInt(e.target.value) : null 
-                  })}
-                  placeholder="Enter days"
-                />
+              {/* Basic Information */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-client">Client *</Label>
+                  <Input
+                    id="edit-client"
+                    value={editDealData.client}
+                    onChange={(e) => setEditDealData({ ...editDealData, client: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-location">Location *</Label>
+                  <Input
+                    id="edit-location"
+                    value={editDealData.location}
+                    onChange={(e) => setEditDealData({ ...editDealData, location: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
 
+              {/* Deal Type */}
               <div className="space-y-2">
-                <Label htmlFor="estimated-opportunity">Total Estimated Opportunity (GBP)</Label>
-                <Input
-                  id="estimated-opportunity"
-                  type="number"
-                  step="0.01"
-                  value={editDealData.total_estimated_opportunity_gbp || ''}
-                  onChange={(e) => setEditDealData({ 
-                    ...editDealData, 
-                    total_estimated_opportunity_gbp: e.target.value ? parseFloat(e.target.value) : null 
-                  })}
-                  placeholder="Enter GBP amount"
-                />
+                <Label htmlFor="edit-deal-type">Deal Type *</Label>
+                <Select
+                  value={editDealData.deal_type}
+                  onValueChange={(value) => setEditDealData({ ...editDealData, deal_type: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Staff">Staff</SelectItem>
+                    <SelectItem value="Contract">Contract</SelectItem>
+                    <SelectItem value="Service">Service</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              {/* Staff/Contract Fields */}
+              {(editDealData.deal_type === 'Staff' || editDealData.deal_type === 'Contract') && (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-placement-id">Placement ID</Label>
+                      <Input
+                        id="edit-placement-id"
+                        value={editDealData.placement_id || ''}
+                        onChange={(e) => setEditDealData({ ...editDealData, placement_id: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-worker-name">Worker Name</Label>
+                      <Input
+                        id="edit-worker-name"
+                        value={editDealData.worker_name || ''}
+                        onChange={(e) => setEditDealData({ ...editDealData, worker_name: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-currency">Currency *</Label>
+                      <Select
+                        value={editDealData.currency}
+                        onValueChange={(value) => setEditDealData({ ...editDealData, currency: value as any })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GBP">GBP (£)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="SAR">SAR (﷼)</SelectItem>
+                          <SelectItem value="AED">AED (د.إ)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-gp-daily">{editDealData.deal_type === 'Staff' ? 'GP Fee' : 'GP Daily'}</Label>
+                      <Input
+                        id="edit-gp-daily"
+                        type="number"
+                        step="0.01"
+                        value={editDealData.gp_daily || ''}
+                        onChange={(e) => setEditDealData({ ...editDealData, gp_daily: e.target.value ? parseFloat(e.target.value) : null })}
+                      />
+                    </div>
+                  </div>
+
+                  {editDealData.deal_type === 'Contract' && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-duration">Duration (Days)</Label>
+                        <Input
+                          id="edit-duration"
+                          type="number"
+                          value={editDealData.duration_days || ''}
+                          onChange={(e) => setEditDealData({ ...editDealData, duration_days: e.target.value ? parseInt(e.target.value) : null })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-estimated-days">Estimated Days (Next 12 Months)</Label>
+                        <Input
+                          id="edit-estimated-days"
+                          type="number"
+                          value={editDealData.estimated_days_12_months || ''}
+                          onChange={(e) => setEditDealData({ ...editDealData, estimated_days_12_months: e.target.value ? parseInt(e.target.value) : null })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Service Fields */}
+              {editDealData.deal_type === 'Service' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-service-name">Service Name</Label>
+                    <Input
+                      id="edit-service-name"
+                      value={editDealData.service_name || ''}
+                      onChange={(e) => setEditDealData({ ...editDealData, service_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-service-description">Service Description</Label>
+                    <Input
+                      id="edit-service-description"
+                      value={editDealData.service_description || ''}
+                      onChange={(e) => setEditDealData({ ...editDealData, service_description: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Values */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-value-original">Value (Original Currency)</Label>
+                  <Input
+                    id="edit-value-original"
+                    type="number"
+                    step="0.01"
+                    value={editDealData.value_original_currency}
+                    onChange={(e) => setEditDealData({ ...editDealData, value_original_currency: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-value-gbp">GBP Value</Label>
+                  <Input
+                    id="edit-value-gbp"
+                    type="number"
+                    step="0.01"
+                    value={editDealData.value_converted_gbp || ''}
+                    onChange={(e) => setEditDealData({ ...editDealData, value_converted_gbp: e.target.value ? parseFloat(e.target.value) : null })}
+                  />
+                </div>
+              </div>
+
+              {editDealData.deal_type === 'Contract' && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-total-opportunity">Total Estimated Opportunity (GBP)</Label>
+                  <Input
+                    id="edit-total-opportunity"
+                    type="number"
+                    step="0.01"
+                    value={editDealData.total_estimated_opportunity_gbp || ''}
+                    onChange={(e) => setEditDealData({ ...editDealData, total_estimated_opportunity_gbp: e.target.value ? parseFloat(e.target.value) : null })}
+                  />
+                </div>
+              )}
+
+              {/* GP Split */}
+              <div className="space-y-4 border-t pt-4">
+                <Label>GP Split</Label>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-bd-rep">BD Rep</Label>
+                    <Select
+                      value={editDealData.bd_user_id || ''}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, bd_user_id: value || null })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select BD" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {profiles.filter(p => (p as any).sales_role === 'BD' || p.role_type === 'BD').map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-bd-percent">BD %</Label>
+                    <Input
+                      id="edit-bd-percent"
+                      type="number"
+                      step="0.01"
+                      value={editDealData.bd_percent || ''}
+                      onChange={(e) => setEditDealData({ ...editDealData, bd_percent: e.target.value ? parseFloat(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-dt-rep">DT Rep</Label>
+                    <Select
+                      value={editDealData.dt_user_id || ''}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, dt_user_id: value || null })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select DT" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {profiles.filter(p => (p as any).sales_role === 'DT' || p.role_type === 'DT').map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-dt-percent">DT %</Label>
+                    <Input
+                      id="edit-dt-percent"
+                      type="number"
+                      step="0.01"
+                      value={editDealData.dt_percent || ''}
+                      onChange={(e) => setEditDealData({ ...editDealData, dt_percent: e.target.value ? parseFloat(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-360-rep">360 Rep</Label>
+                    <Select
+                      value={editDealData.user_360_id || ''}
+                      onValueChange={(value) => setEditDealData({ ...editDealData, user_360_id: value || null })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select 360" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {profiles.filter(p => (p as any).sales_role === '360' || p.role_type === '360').map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-360-percent">360 %</Label>
+                    <Input
+                      id="edit-360-percent"
+                      type="number"
+                      step="0.01"
+                      value={editDealData.percent_360 || ''}
+                      onChange={(e) => setEditDealData({ ...editDealData, percent_360: e.target.value ? parseFloat(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select
+                  value={editDealData.status || 'Draft'}
+                  onValueChange={(value) => setEditDealData({ ...editDealData, status: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Submitted">Submitted</SelectItem>
+                    <SelectItem value="Under Review">Under Review</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="Revision Required">Revision Required</SelectItem>
+                    <SelectItem value="Voided">Voided</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4">
                 <Button
                   type="button"
                   variant="outline"
