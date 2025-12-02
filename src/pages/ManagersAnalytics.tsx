@@ -194,7 +194,7 @@ export default function ManagersAnalytics() {
     }).filter(r => r.members > 0).sort((a, b) => b.gpAdded - a.gpAdded);
   }, [analyticsData, filteredDeals]);
 
-  // Calculate monthly trends
+  // Calculate monthly trends with cumulative
   const monthlyTrends = useMemo(() => {
     if (!filteredDeals.length) return [];
     
@@ -219,9 +219,16 @@ export default function ManagersAnalytics() {
       }
     });
     
-    return Object.entries(monthsData)
+    const sorted = Object.entries(monthsData)
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .map(([, data]) => data);
+    
+    // Add cumulative GP
+    let cumulative = 0;
+    return sorted.map(data => {
+      cumulative += data.gpAdded;
+      return { ...data, cumulativeGP: cumulative };
+    });
   }, [filteredDeals]);
 
   // Calculate projection
@@ -430,19 +437,21 @@ export default function ManagersAnalytics() {
       <Card>
         <CardHeader>
           <CardTitle>Monthly Trend</CardTitle>
-          <CardDescription>GP Added over time</CardDescription>
+          <CardDescription>GP Added over time with cumulative total</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyTrends}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
               <Tooltip
                 formatter={(value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`}
               />
               <Legend />
-              <Line type="monotone" dataKey="gpAdded" stroke="#8884d8" strokeWidth={2} name="GP Added" />
+              <Line yAxisId="left" type="monotone" dataKey="gpAdded" stroke="#8884d8" strokeWidth={2} name="Monthly GP" />
+              <Line yAxisId="right" type="monotone" dataKey="cumulativeGP" stroke="#82ca9d" strokeWidth={2} name="Cumulative GP" />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
